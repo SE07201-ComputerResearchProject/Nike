@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Login</title>
+		<link rel="stylesheet" href="login.css">
+		<style>
+			/* minimal reset for this file */
+			:root{box-sizing:border-box}
+			*,*::before,*::after{box-sizing:inherit}
+		</style>
+</head>
+<body>
+
+	<iframe class="header-embed" src="../header.html" title="Site Header" loading="eager"></iframe>
+
+	<main class="main-container">
+
+		<section class="logo-panel" aria-label="Logo O'Future">
+			<img src="Logo.png" alt="O'Future logo" class="logo-image">
+		</section>
+
+		<!-- Shopping cart (image provided by user) -->
+		<div class="target-area">
+			<!-- keep id=target so existing JS still queries it; use an img and an invisible .ring.inner as aim point -->
+			<div id="target" class="basket" role="button" tabindex="0" aria-pressed="false" style="position:relative;display:inline-block">
+				<img src="giohang.png" alt="giỏ hàng" style="display:block;max-width:260px;height:auto;">
+				<!-- invisible aim point positioned over the basket opening (roughly center-right) -->
+				<span class="ring inner" aria-hidden="true" style="position:absolute;width:24px;height:24px;left:50.8%;top:47.5%;transform:translate(-50%,-50%);border-radius:50%;opacity:0"></span>
+			</div>
+		</div>
+
+		<section class="login-box" aria-label="Đăng nhập">
+			<div class="login-title">LOGIN</div>
+			<form>
+				<div class="input-group"><input type="text" placeholder="Username" autocomplete="username"></div>
+				<div class="input-group"><input type="password" placeholder="Password" autocomplete="current-password"></div>
+				<button type="submit">Đăng nhập</button>
+				<p class="switch-auth">Chua co tai khoan? <a href="../register.html">Dang ky ngay</a></p>
+			</form>
+		</section>
+
+	</main>
+
+	<iframe class="footer-embed" src="../footer.html" title="Site Footer" loading="eager"></iframe>
+
+		<!-- floating projectile (ball) element animated from off-screen into the target -->
+		<!-- kicker: use user's image nguoinembong.png and an invisible throw-hand anchor -->
+		<div id="kicker" class="kicker" aria-hidden="true" style="position:fixed; left:6vw; bottom:12vh; width:120px; height:auto; z-index:800">
+			<img src="nguoinembong.png" alt="người ném bóng" style="display:block;width:100%;height:auto;">
+			<!-- throw-hand anchor for JS to compute start position -->
+			<span id="throw-hand" style="position:absolute;left:78%;top:48%;width:10px;height:10px;display:block;opacity:0;border-radius:50%"></span>
+			<!-- keep a small kick-foot hidden for fallback if script references it -->
+			<span id="kick-foot" style="position:absolute;left:74%;top:82%;width:8px;height:8px;display:block;opacity:0;border-radius:50%"></span>
+		</div>
+
+		<div id="ball" class="projectile" aria-hidden="true">
+			<img src="money.png" alt="money" class="ball-img" aria-hidden="true">
+		</div>
+
+	    <script src="login.js"></script>
+</body>
+</html>

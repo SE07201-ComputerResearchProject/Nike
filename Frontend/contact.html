@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Contact</title>
+	<link rel="stylesheet" href="contact.css">
+	<style>
+		:root{box-sizing:border-box}
+		*,*::before,*::after{box-sizing:inherit}
+	</style>
+</head>
+<body>
+	<iframe class="header-embed" src="header.html" title="Site Header" loading="eager"></iframe>
+
+	<main class="main-container">
+		<section class="logo-panel" aria-label="Logo O'Future">
+			<img src="loginbd.html/Logo.png" alt="O'Future logo" class="logo-image">
+		</section>
+
+		<section class="login-box" aria-label="Contact form">
+			<h1 class="login-title">CONTACT</h1>
+			<form id="contactForm" novalidate>
+				<div class="input-group">
+					<label for="fullName">Full Name</label>
+					<input id="fullName" name="fullName" type="text" required autocomplete="name" placeholder="Enter your full name">
+					<small class="field-error" data-error-for="fullName"></small>
+				</div>
+
+				<div class="input-group">
+					<label for="email">Email</label>
+					<input id="email" name="email" type="email" required autocomplete="email" placeholder="Enter your email">
+					<small class="field-error" data-error-for="email"></small>
+				</div>
+
+				<div class="input-group">
+					<label for="subject">Subject</label>
+					<select id="subject" name="subject" required>
+						<option value="">Select a subject</option>
+						<option value="General Inquiry">General Inquiry</option>
+						<option value="Support">Support</option>
+						<option value="Business">Business</option>
+						<option value="Feedback">Feedback</option>
+					</select>
+					<small class="field-error" data-error-for="subject"></small>
+				</div>
+
+				<div class="input-group">
+					<label for="message">Message</label>
+					<textarea id="message" name="message" rows="4" required placeholder="Write your message..."></textarea>
+					<small class="field-error" data-error-for="message"></small>
+				</div>
+
+				<button id="submitBtn" type="submit">Send Message</button>
+				<p id="formSuccess" class="success-message" role="status" aria-live="polite"></p>
+			</form>
+		</section>
+	</main>
+
+	<iframe class="footer-embed" src="footer.html" title="Site Footer" loading="eager"></iframe>
+
+	<script src="contact.js"></script>
+</body>
+</html>
