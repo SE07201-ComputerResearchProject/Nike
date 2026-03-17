@@ -1,0 +1,84 @@
+.payment-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 24px;
+}
+
+.payment-page__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.payment-page__title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 32px 0;
+  color: #333;
+  text-align: center;
+}
+
+.payment-page__loading,
+.payment-page__error {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #666;
+}
+
+.payment-page__error {
+  color: #d32f2f;
+}
+
+.payment-page__error-banner {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.payment-page__content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.payment-page__left,
+.payment-page__right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.payment-page__method-content {
+  margin-top: 24px;
+}
+
+@media (max-width: 968px) {
+  .payment-page__content {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-page__left {
+    order: 2;
+  }
+
+  .payment-page__right {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .payment-page {
+    padding: 16px;
+  }
+
+  .payment-page__title {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
+}
