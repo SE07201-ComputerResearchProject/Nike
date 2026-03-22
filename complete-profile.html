@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hoàn thiện hồ sơ | O’Future</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="complete-profile.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a href="#" class="logo">
+        <span class="logo-mark">O</span>
+        <span class="logo-text">O’Future</span>
+      </a>
+
+      <div class="nav-right">
+        <span class="progress-text">Bước 2/2 • Hoàn thiện hồ sơ</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container page-grid">
+      <!-- LEFT -->
+      <section class="intro-panel">
+        <p class="badge">Thiết lập tài khoản</p>
+        <h1>Hoàn thiện hồ sơ để bắt đầu sử dụng O’Future</h1>
+        <p class="intro-text">
+          Chỉ cần điền thêm một vài thông tin cơ bản để hệ thống đề xuất trải nghiệm phù hợp,
+          tăng độ tin cậy tài khoản và hỗ trợ giao dịch an toàn hơn.
+        </p>
+
+        <div class="benefit-list">
+          <div class="benefit-card">
+            <h3>Hiển thị chuyên nghiệp hơn</h3>
+            <p>Hồ sơ đầy đủ giúp đối tác dễ đánh giá và tin tưởng hơn khi giao dịch.</p>
+          </div>
+
+          <div class="benefit-card">
+            <h3>Đề xuất đúng nhu cầu</h3>
+            <p>Người mua được gợi ý nguồn hàng phù hợp, người bán tiếp cận đúng khách hơn.</p>
+          </div>
+
+          <div class="benefit-card">
+            <h3>Hỗ trợ xác minh nhanh hơn</h3>
+            <p>Thông tin rõ ràng giúp quy trình kiểm tra và kích hoạt tính năng thuận tiện hơn.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT -->
+      <section class="form-panel">
+        <div class="form-head">
+          <div>
+            <p class="form-label">Thông tin hồ sơ</p>
+            <h2>Điền thông tin cơ bản</h2>
+          </div>
+          <span class="status-pill">Bảo mật</span>
+        </div>
+
+        <form action="#" method="post" class="profile-form">
+          <div class="role-switch">
+            <label class="role-option">
+              <input type="radio" name="user_role" value="buyer" checked />
+              <span>Tôi là người mua</span>
+            </label>
+
+            <label class="role-option">
+              <input type="radio" name="user_role" value="seller" />
+              <span>Tôi là nhà cung cấp</span>
+            </label>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="fullname">Họ và tên</label>
+              <input type="text" id="fullname" name="fullname" placeholder="Nhập họ và tên" />
+              <div class="error-message" id="fullname-error" style="color: red; font-size: 12px; display: none;"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Số điện thoại</label>
+              <input type="tel" id="phone" name="phone" placeholder="Nhập số điện thoại" />
+              <div class="error-message" id="phone-error" style="color: red; font-size: 12px; display: none;"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email liên hệ</label>
+              <input type="email" id="email" name="email" placeholder="example@email.com" />
+              <div class="error-message" id="email-error" style="color: red; font-size: 12px; display: none;"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="city">Tỉnh / Thành phố</label>
+              <select id="city" name="city">
+                <option value="">Chọn khu vực</option>
+                <option>Hồ Chí Minh</option>
+                <option>Hà Nội</option>
+                <option>Đà Nẵng</option>
+                <option>Bình Dương</option>
+                <option>Cần Thơ</option>
+                <option>Khác</option>
+              </select>
+              <div class="error-message" id="city-error" style="color: red; font-size: 12px; display: none;"></div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="store-name">Tên cửa hàng / doanh nghiệp</label>
+              <input
+                type="text"
+                id="store-name"
+                name="store_name"
+                placeholder="Ví dụ: Kho sỉ Minh Phát / Shop Hằng Boutique"
+              />
+              <div class="error-message" id="store-name-error" style="color: red; font-size: 12px; display: none;"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="category">Ngành hàng quan tâm</label>
+              <select id="category" name="category">
+                <option value="">Chọn ngành hàng</option>
+                <option>Thời trang</option>
+                <option>Mỹ phẩm</option>
+                <option>Gia dụng</option>
+                <option>Phụ kiện</option>
+                <option>Thực phẩm đóng gói</option>
+                <option>Đồ chơi</option>
+                <option>Khác</option>
+              </select>
+              <div class="error-message" id="category-error" style="color: red; font-size: 12px; display: none;"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="scale">Quy mô kinh doanh</label>
+              <select id="scale" name="scale">
+                <option value="">Chọn quy mô</option>
+                <option>Cá nhân / mới bắt đầu</option>
+                <option>Cửa hàng nhỏ</option>
+                <option>Hộ kinh doanh</option>
+                <option>Doanh nghiệp</option>
+                <option>Khác</option>
+              </select>
+              <div class="error-message" id="scale-error" style="color: red; font-size: 12px; display: none;"></div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="address">Địa chỉ liên hệ</label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                placeholder="Nhập địa chỉ liên hệ hoặc địa chỉ kho hàng"
+              />
+              <div class="error-message" id="address-error" style="color: red; font-size: 12px; display: none;"></div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="bio">Mô tả ngắn</label>
+              <textarea
+                id="bio"
+                name="bio"
+                rows="4"
+                placeholder="Giới thiệu ngắn về nhu cầu nhập hàng hoặc lĩnh vực bạn đang kinh doanh"
+              ></textarea>
+              <div class="error-message" id="bio-error" style="color: red; font-size: 12px; display: none;"></div>
+            </div>
+          </div>
+
+          <div class="helper-box">
+            <h3>Gợi ý để hồ sơ trông uy tín hơn</h3>
+            <ul>
+              <li>Dùng tên thật hoặc tên cửa hàng rõ ràng</li>
+              <li>Chọn đúng ngành hàng để nhận đề xuất phù hợp</li>
+              <li>Điền mô tả ngắn giúp đối tác hiểu nhu cầu nhanh hơn</li>
+            </ul>
+          </div>
+
+          <div class="form-actions">
+            <a href="#" class="btn btn-outline">Quay lại</a>
+            <button type="submit" class="btn btn-primary">Hoàn tất hồ sơ</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    function showError(id, message) {
+      const errorDiv = document.getElementById(id + '-error');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+    }
+
+    function hideError(id) {
+      const errorDiv = document.getElementById(id + '-error');
+      errorDiv.style.display = 'none';
+    }
+
+    function validateFullname() {
+      const value = document.getElementById('fullname').value.trim();
+      if (!value) {
+        showError('fullname', 'Vui lòng nhập Họ và tên.');
+        return false;
+      } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(value)) {
+        showError('fullname', 'Họ và tên chỉ được chứa chữ cái và khoảng trắng.');
+        return false;
+      } else if (value.length < 2) {
+        showError('fullname', 'Họ và tên phải có ít nhất 2 ký tự.');
+        return false;
+      } else {
+        hideError('fullname');
+        return true;
+      }
+    }
+
+    function validatePhone() {
+      const value = document.getElementById('phone').value.trim();
+      if (!value) {
+        showError('phone', 'Vui lòng nhập Số điện thoại.');
+        return false;
+      } else if (!/^(\+84|0)[3-9][0-9]{8}$/.test(value)) {
+        showError('phone', 'Số điện thoại không hợp lệ.');
+        return false;
+      } else {
+        hideError('phone');
+        return true;
+      }
+    }
+
+    function validateEmail() {
+      const value = document.getElementById('email').value.trim();
+      if (!value) {
+        showError('email', 'Vui lòng nhập Email.');
+        return false;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        showError('email', 'Email không hợp lệ.');
+        return false;
+      } else {
+        hideError('email');
+        return true;
+      }
+    }
+
+    function validateCity() {
+      const value = document.getElementById('city').value;
+      if (!value) {
+        showError('city', 'Vui lòng chọn Tỉnh / Thành phố.');
+        return false;
+      } else {
+        hideError('city');
+        return true;
+      }
+    }
+
+    function validateStoreName() {
+      const value = document.getElementById('store-name').value.trim();
+      if (!value) {
+        showError('store-name', 'Vui lòng nhập Tên cửa hàng / doanh nghiệp.');
+        return false;
+      } else {
+        hideError('store-name');
+        return true;
+      }
+    }
+
+    function validateCategory() {
+      const value = document.getElementById('category').value;
+      if (!value) {
+        showError('category', 'Vui lòng chọn Ngành hàng quan tâm.');
+        return false;
+      } else {
+        hideError('category');
+        return true;
+      }
+    }
+
+    function validateScale() {
+      const value = document.getElementById('scale').value;
+      if (!value) {
+        showError('scale', 'Vui lòng chọn Quy mô kinh doanh.');
+        return false;
+      } else {
+        hideError('scale');
+        return true;
+      }
+    }
+
+    function validateAddress() {
+      const value = document.getElementById('address').value.trim();
+      if (!value) {
+        showError('address', 'Vui lòng nhập Địa chỉ liên hệ.');
+        return false;
+      } else {
+        hideError('address');
+        return true;
+      }
+    }
+
+    // Event listeners
+    document.getElementById('fullname').addEventListener('blur', validateFullname);
+    document.getElementById('phone').addEventListener('blur', validatePhone);
+    document.getElementById('email').addEventListener('blur', validateEmail);
+    document.getElementById('city').addEventListener('blur', validateCity);
+    document.getElementById('store-name').addEventListener('blur', validateStoreName);
+    document.getElementById('category').addEventListener('blur', validateCategory);
+    document.getElementById('scale').addEventListener('blur', validateScale);
+    document.getElementById('address').addEventListener('blur', validateAddress);
+
+    // Form submit
+    document.querySelector('.profile-form').addEventListener('submit', function(event) {
+      const isValid = validateFullname() && validatePhone() && validateEmail() && validateCity() &&
+                      validateStoreName() && validateCategory() && validateScale() && validateAddress();
+      if (!isValid) {
+        event.preventDefault();
+      } else {
+        localStorage.setItem('userFullname', document.getElementById('fullname').value.trim());
+      }
+    });
+  </script>
+</body>
+</html>

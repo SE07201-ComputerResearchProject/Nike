@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buyer Dashboard | O’Future</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="buyer-dashboard.css" />
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">O</div>
+        <div>
+          <h2>O’Future</h2>
+          <p>Buyer Panel</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active">Trang chủ</a>
+        <a href="#" class="nav-item">Sản phẩm</a>
+        <a href="#" class="nav-item">Giỏ hàng</a>
+        <a href="#" class="nav-item">Đơn hàng</a>
+        <a href="#" class="nav-item">Ký quỹ</a>
+        <a href="#" class="nav-item">Lịch sử mua hàng</a>
+        <a href="#" class="nav-item">Tài khoản</a>
+      </nav>
+
+      <div class="sidebar-box">
+        <p class="mini-label">Mẹo sử dụng</p>
+        <h3>Tìm nguồn hàng nhanh hơn</h3>
+        <p>
+          Bắt đầu từ danh mục sản phẩm, lọc theo giá sỉ, số lượng tối thiểu
+          và khu vực giao hàng.
+        </p>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div>
+          <p class="welcome-tag">Buyer Dashboard</p>
+          <h1>Xin chào, Name</h1>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="search-box">
+            <input type="text" placeholder="Tìm nguồn hàng, ngành hàng..." />
+          </div>
+          <button class="btn btn-outline">Thông báo</button>
+          <button class="btn btn-primary">Tạo yêu cầu mua</button>
+        </div>
+      </header>
+
+      <!-- Stats -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <p>Đơn hàng đang xử lý</p>
+          <h3>08</h3>
+        </div>
+        <div class="stat-card">
+          <p>Giao dịch ký quỹ</p>
+          <h3>05</h3>
+        </div>
+        <div class="stat-card">
+          <p>Nhà cung cấp đã lưu</p>
+          <h3>21</h3>
+        </div>
+        <div class="stat-card">
+          <p>Chi tiêu tháng này</p>
+          <h3>₫48M</h3>
+        </div>
+      </section>
+
+      <!-- Quick filter -->
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="section-tag">Tìm kiếm nguồn hàng</p>
+            <h2>Danh mục phổ biến</h2>
+          </div>
+          <a href="#" class="text-link">Xem tất cả</a>
+        </div>
+
+        <div class="category-grid">
+          <a href="#" class="category-card">
+            <h3>Thời trang</h3>
+            <p>Quần áo, phụ kiện, hàng trend</p>
+          </a>
+          <a href="#" class="category-card">
+            <h3>Mỹ phẩm</h3>
+            <p>Skincare, makeup, sản phẩm chăm sóc cá nhân</p>
+          </a>
+          <a href="#" class="category-card">
+            <h3>Gia dụng</h3>
+            <p>Đồ dùng nhà cửa, đồ tiện ích</p>
+          </a>
+          <a href="#" class="category-card">
+            <h3>Thực phẩm đóng gói</h3>
+            <p>Snack, đồ khô, hàng tiêu dùng nhanh</p>
+          </a>
+        </div>
+      </section>
+
+      <!-- Product list + right info -->
+      <section class="content-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-tag">Đề cử cho bạn</p>
+              <h2>Nguồn hàng nổi bật</h2>
+            </div>
+            <a href="#" class="text-link">Xem thêm</a>
+          </div>
+
+          <div class="product-list">
+            <article class="product-card">
+              <div class="product-image">Ảnh SP</div>
+              <div class="product-info">
+                <h3>Áo thun nữ basic form rộng</h3>
+                <p class="product-meta">Danh mục: Thời trang • MOQ: 20 sản phẩm</p>
+                <p class="product-price">Giá sỉ: ₫45.000 / sản phẩm</p>
+              </div>
+              <div class="product-actions">
+                <button class="btn btn-outline small-btn">Chi tiết</button>
+                <button class="btn btn-primary small-btn">Thêm giỏ</button>
+              </div>
+            </article>
+
+            <article class="product-card">
+              <div class="product-image">Ảnh SP</div>
+              <div class="product-info">
+                <h3>Set skincare mini size</h3>
+                <p class="product-meta">Danh mục: Mỹ phẩm • MOQ: 10 bộ</p>
+                <p class="product-price">Giá sỉ: ₫89.000 / bộ</p>
+              </div>
+              <div class="product-actions">
+                <button class="btn btn-outline small-btn">Chi tiết</button>
+                <button class="btn btn-primary small-btn">Thêm giỏ</button>
+              </div>
+            </article>
+
+            <article class="product-card">
+              <div class="product-image">Ảnh SP</div>
+              <div class="product-info">
+                <h3>Hộp đựng thực phẩm 3 ngăn</h3>
+                <p class="product-meta">Danh mục: Gia dụng • MOQ: 30 hộp</p>
+                <p class="product-price">Giá sỉ: ₫22.000 / hộp</p>
+              </div>
+              <div class="product-actions">
+                <button class="btn btn-outline small-btn">Chi tiết</button>
+                <button class="btn btn-primary small-btn">Thêm giỏ</button>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="side-column">
+          <div class="panel small-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-tag">Ký quỹ</p>
+                <h2>Trạng thái gần đây</h2>
+              </div>
+            </div>
+
+            <div class="escrow-item success">
+              <h4>Đơn #OF1025</h4>
+              <p>Đã giữ tiền ký quỹ • Chờ người bán giao hàng</p>
+            </div>
+
+            <div class="escrow-item pending">
+              <h4>Đơn #OF1032</h4>
+              <p>Đang xác nhận thanh toán</p>
+            </div>
+
+            <div class="escrow-item info">
+              <h4>Đơn #OF1018</h4>
+              <p>Đã hoàn tất và giải ngân thành công</p>
+            </div>
+          </div>
+
+          <div class="panel small-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-tag">Lịch sử đơn hàng</p>
+                <h2>Đơn gần đây</h2>
+              </div>
+            </div>
+
+            <ul class="order-list">
+              <li>
+                <strong>#OF1025</strong>
+                <span>Đang giao hàng</span>
+              </li>
+              <li>
+                <strong>#OF1018</strong>
+                <span>Hoàn tất</span>
+              </li>
+              <li>
+                <strong>#OF1009</strong>
+                <span>Đã hoàn tiền</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const userName = localStorage.getItem('userFullname') || 'Name';
+    document.querySelector('.topbar h1').textContent = `Xin chào, ${userName}`;
+  </script>
+</body>
+</html>
