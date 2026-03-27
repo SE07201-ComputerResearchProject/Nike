@@ -368,6 +368,73 @@ const getMe = async (req: AuthRequest, res: Response): Promise<any> => {
 };
 
 // ─────────────────────────────────────────────
+// PUT /api/auth/me (Update Profile)
+// ─────────────────────────────────────────────
+const updateMe = async (req: AuthRequest, res: Response): Promise<any> => {
+  const { fullName, phone, avatarUrl } = req.body;
+  const ctx = reqContext(req);
+
+  try {
+    await UserModel.updateProfile(req.user.id, { fullName, phone, avatarUrl });
+
+    await LogModel.write({
+      ...ctx,
+      userId: req.user.id,
+      eventType: 'profile_updated', // Ghi log tùy chỉnh
+      severity: 'info',
+      message: 'User updated their profile information.'
+    });
+
+    res.status(200).json({ success: true, message: 'Profile updated successfully.' });
+  } catch (err) {
+    logger.error('updateMe error:', err);
+    res.status(500).json({ success: false, message: 'Failed to update profile.' });
+  }
+};
+
+// ─────────────────────────────────────────────
+// DELETE /api/auth/me (Self-delete Account)
+// ─────────────────────────────────────────────
+const deleteMe = async (req: AuthRequest, res: Response): Promise<any> => {
+  const { password } = req.body;
+  const ctx = reqContext(req);
+
+  try {
+    // 1. Cần lấy password_hash để verify, nên phải gọi findByEmail (findById không trả về hash)
+    const userForAuth = await UserModel.findById(req.user.id);
+    if (!userForAuth) return res.status(404).json({ success: false, message: 'User not found.' });
+    
+    const fullUser = await UserModel.findByEmail(userForAuth.email);
+    if (!fullUser) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    // 2. Xác nhận mật khẩu hiện tại
+    const passwordMatch = await bcrypt.compare(password, fullUser.password_hash);
+    if (!passwordMatch) {
+      return res.status(401).json({ success: false, message: 'Incorrect password. Deletion failed.' });
+    }
+
+    // 3. Xóa mọi phiên đăng nhập (Đăng xuất khỏi mọi thiết bị)
+    await RefreshTokenModel.revokeAllForUser(req.user.id);
+
+    // 4. Gọi hàm Xóa Mềm
+    await UserModel.softDeleteUser(req.user.id, fullUser.email);
+
+    await LogModel.write({
+      ...ctx,
+      userId: req.user.id,
+      eventType: 'account_deleted',
+      severity: 'warn',
+      message: `User permanently deleted their account: ${fullUser.email}`
+    });
+
+    res.status(200).json({ success: true, message: 'Account permanently deleted. We are sorry to see you go!' });
+  } catch (err) {
+    logger.error('deleteMe error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete account.' });
+  }
+};
+
+// ─────────────────────────────────────────────
 // POST /api/auth/verify-email
 // ─────────────────────────────────────────────
 const verifyEmail = async (req: AuthRequest, res: Response): Promise<any> => {
@@ -609,4 +676,104 @@ const googleLogin = async (req: AuthRequest, res: Response): Promise<any> => {
   }
 };
 
-export = { register, login, refreshToken, logout, getMe, verifyEmail, resendOtp, googleLogin };
+// ─────────────────────────────────────────────
+// POST /api/auth/forgot-password
+// ─────────────────────────────────────────────
+const forgotPassword = async (req: AuthRequest, res: Response): Promise<any> => {
+  const { email } = req.body;
+  const ctx = reqContext(req);
+
+  try {
+    const user = await UserModel.findByEmail(email);
+    // Bảo mật: Nếu email không tồn tại, vẫn báo thành công để tránh lộ thông tin người dùng
+    if (!user) {
+      return res.status(200).json({ success: true, message: 'If this email is registered, an OTP has been sent.' });
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({ success: false, message: 'Account suspended.' });
+    }
+
+    // Chống spam gửi mail liên tục
+    const cooldownKey = `otp_cooldown:forgot:${email}`;
+    const isCoolingDown = await redisClient.get(cooldownKey);
+    if (isCoolingDown) {
+      return res.status(429).json({ success: false, message: 'Please wait 60 seconds before requesting a new code.' });
+    }
+
+    const otpCode = crypto.randomInt(100000, 999999).toString();
+    const redisKey = `otp:forgot:${email}`;
+
+    await redisClient.set(redisKey, otpCode, 'EX', 300); // Hết hạn sau 5 phút
+    await redisClient.set(cooldownKey, '1', 'EX', 60);   // Cooldown 1 phút
+
+    // Sử dụng lại hàm gửi mail OTP
+    await emailService.sendOtpEmail(email, otpCode);
+
+    await LogModel.write({
+      ...ctx,
+      userId: user.id,
+      eventType: 'forgot_password_requested',
+      severity: 'info',
+      message: `Password reset OTP sent to: ${email}`
+    });
+
+    res.status(200).json({ success: true, message: 'If this email is registered, an OTP has been sent.' });
+  } catch (err) {
+    logger.error('forgotPassword error:', err);
+    res.status(500).json({ success: false, message: 'Failed to process request.' });
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/auth/reset-password
+// ─────────────────────────────────────────────
+const resetPassword = async (req: AuthRequest, res: Response): Promise<any> => {
+  const { email, otp, newPassword } = req.body;
+  const ctx = reqContext(req);
+
+  try {
+    const redisKey = `otp:forgot:${email}`;
+    const storedOtp = await redisClient.get(redisKey);
+
+    if (!storedOtp) {
+      return res.status(400).json({ success: false, message: 'OTP has expired or does not exist.' });
+    }
+
+    if (storedOtp !== String(otp)) {
+      return res.status(400).json({ success: false, message: 'Incorrect OTP.' });
+    }
+
+    const user = await UserModel.findByEmail(email);
+    if (!user || !user.is_active) {
+      return res.status(400).json({ success: false, message: 'Invalid request.' });
+    }
+
+    // 1. Mã hóa mật khẩu mới
+    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    // 2. Lưu DB
+    await UserModel.updatePassword(user.id, passwordHash);
+
+    // 3. Xóa OTP khỏi Redis
+    await redisClient.del(redisKey);
+
+    // 4. BẢO MẬT TỐI ĐA: Đăng xuất tài khoản này khỏi MỌI thiết bị hiện tại
+    await RefreshTokenModel.revokeAllForUser(user.id);
+
+    await LogModel.write({
+      ...ctx,
+      userId: user.id,
+      eventType: 'password_reset',
+      severity: 'warn', // Ghi log cảnh báo mức warn để Admin dễ theo dõi
+      message: `User reset their password: ${email}`
+    });
+
+    res.status(200).json({ success: true, message: 'Password has been reset successfully. Please log in with your new password.' });
+  } catch (err) {
+    logger.error('resetPassword error:', err);
+    res.status(500).json({ success: false, message: 'Failed to reset password.' });
+  }
+};
+
+export = { register, login, refreshToken, logout, getMe, updateMe, deleteMe, verifyEmail, resendOtp, googleLogin, forgotPassword, resetPassword };

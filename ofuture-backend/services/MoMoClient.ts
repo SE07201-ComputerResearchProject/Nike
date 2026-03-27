@@ -46,9 +46,9 @@ class MoMoClient {
   private ipnUrl: string;
 
   constructor() {
-    this.partnerCode = process.env.MOMO_PARTNER_CODE || '';
-    this.accessKey   = process.env.MOMO_ACCESS_KEY || '';
-    this.secretKey   = process.env.MOMO_SECRET_KEY || '';
+    this.partnerCode = process.env.MOMO_PARTNER_CODE || 'MOMO';
+    this.accessKey   = process.env.MOMO_ACCESS_KEY || 'F8BBA842ECF85';
+    this.secretKey   = process.env.MOMO_SECRET_KEY || 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
     this.endpoint    = process.env.MOMO_ENDPOINT || 'https://test-payment.momo.vn/v2/gateway/api/create';
     this.redirectUrl = process.env.MOMO_REDIRECT_URL || 'http://localhost:3000/payment/momo/callback';
     this.ipnUrl      = process.env.MOMO_IPN_URL || 'http://localhost:5000/api/payments/momo/callback';

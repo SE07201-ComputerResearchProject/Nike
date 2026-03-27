@@ -36,7 +36,8 @@ const OrderModel = {
       `SELECT
          o.id, o.buyer_id, o.seller_id, o.product_id,
          o.quantity, o.unit_price, o.total_amount,
-         o.status, o.shipping_address, o.notes,
+         o.status, o.shipping_address, o.carrier, 
+         o.tracking_number, o.notes,
          o.cancelled_at, o.completed_at,
          o.created_at, o.updated_at,
          b.username  AS buyer_username,
@@ -66,7 +67,7 @@ const OrderModel = {
     const [rows]: any = await pool.execute(
       `SELECT
          o.id, o.status, o.quantity, o.unit_price, o.total_amount,
-         o.created_at,
+         o.carrier, o.tracking_number, o.created_at,
          p.name AS product_name,
          p.id   AS product_id,
          s.username AS seller_username
@@ -91,7 +92,7 @@ const OrderModel = {
     const [rows]: any = await pool.execute(
       `SELECT
          o.id, o.status, o.quantity, o.unit_price, o.total_amount,
-         o.created_at,
+         o.carrier, o.tracking_number, o.created_at,
          p.name AS product_name,
          b.username AS buyer_username
        FROM orders o
@@ -112,7 +113,11 @@ const OrderModel = {
 
     if (status === 'cancelled') { fields.push('cancelled_at = NOW()'); }
     if (status === 'completed') { fields.push('completed_at = NOW()'); }
-    if (extra.notes) { fields.push('notes = ?'); params.push(extra.notes); }
+    
+    // Xử lý các trường extra
+    if (extra.notes !== undefined) { fields.push('notes = ?'); params.push(extra.notes); }
+    if (extra.carrier !== undefined) { fields.push('carrier = ?'); params.push(extra.carrier); }
+    if (extra.trackingNumber !== undefined) { fields.push('tracking_number = ?'); params.push(extra.trackingNumber); }
 
     params.push(id);
     const [result]: any = await db.execute(

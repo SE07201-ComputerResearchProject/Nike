@@ -73,6 +73,53 @@ const validateRefreshToken = [
   handleValidation,
 ];
 
+const validateUpdateProfile = [
+  body('fullName')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 150 }).withMessage('Full name must be 2–150 characters.')
+    .escape(),
+  body('phone')
+    .optional({ checkFalsy: true }) // Cho phép chuỗi rỗng
+    .isMobilePhone('any').withMessage('Must be a valid phone number.'),
+  body('avatarUrl')
+    .optional({ checkFalsy: true })
+    .isURL().withMessage('Must be a valid URL.'),
+  handleValidation,
+];
+
+const validateDeleteAccount = [
+  body('password')
+    .notEmpty().withMessage('Current password is required to delete account.'),
+  handleValidation,
+];
+
+const validateForgotPassword = [
+  body('email')
+    .trim()
+    .isEmail().withMessage('Must be a valid email address.')
+    .normalizeEmail(),
+  handleValidation,
+];
+
+const validateResetPassword = [
+  body('email')
+    .trim()
+    .isEmail().withMessage('Must be a valid email address.')
+    .normalizeEmail(),
+  body('otp')
+    .trim()
+    .notEmpty().withMessage('OTP is required.')
+    .isLength({ min: 6, max: 6 }).withMessage('OTP must be exactly 6 digits.'),
+  body('newPassword')
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters.')
+    .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter.')
+    .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter.')
+    .matches(/\d/).withMessage('Password must contain at least one number.')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/).withMessage('Password must contain at least one special character.'),
+  handleValidation,
+];  
+
 // ── Product validators ─────────────────────────
 const validateCreateProduct = [
   body('name')
@@ -211,6 +258,10 @@ export = {
   validateRegister,
   validateLogin,
   validateRefreshToken,
+  validateUpdateProfile,
+  validateDeleteAccount,
+  validateForgotPassword,
+  validateResetPassword,
   validateCreateProduct,
   validateCreateOrder,
   validateCreateReview,

@@ -45,6 +45,11 @@ router.post('/qr/create', authorizeRoles('buyer'), validateCreate, paymentContro
 router.get('/:paymentId/status', param('paymentId').isUUID(), validate, paymentController.getStatus);
 
 // ─────────────────────────────────────────────
+// MỚI: Mở luồng SSE nghe trạng thái thanh toán
+// ─────────────────────────────────────────────
+router.get('/:paymentId/stream', param('paymentId').isUUID(), validate, paymentController.streamPaymentStatus);
+
+// ─────────────────────────────────────────────
 // 3. ADMIN ROUTES
 // ─────────────────────────────────────────────
 // Admin xác nhận thủ công khi nhận được tiền chuyển khoản ngân hàng (QR)

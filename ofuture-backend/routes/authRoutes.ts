@@ -6,11 +6,11 @@
 
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-const { register, login, refreshToken, logout, getMe, verifyEmail, resendOtp, googleLogin } = require('../controllers/authController');
+const { register, login, refreshToken, logout, getMe, updateMe, deleteMe, verifyEmail, resendOtp, googleLogin, forgotPassword, resetPassword } = require('../controllers/authController');
 const { authenticate }     = require('../middleware/auth');
 const { noCache, autobanCheck } = require('../middleware/security');
 const { rotateCsrfToken } = require('../middleware/csrf');
-const { validateRegister, validateLogin, validateRefreshToken } = require('../middleware/validate');
+const { validateRegister, validateLogin, validateRefreshToken, validateUpdateProfile, validateDeleteAccount, validateForgotPassword, validateResetPassword } = require('../middleware/validate');
 
 const router = express.Router();
 
@@ -64,10 +64,18 @@ router.post('/logout', authenticate, logout);
 
 router.get('/me', authenticate, getMe);
 
+router.put('/me', authenticate, validateUpdateProfile, updateMe);
+
+router.delete('/me', authenticate, validateDeleteAccount, deleteMe);
+
 router.post('/verify-email', otpLimiter, verifyEmail);
 
 router.post('/resend-otp', otpLimiter, resendOtp);
 
 router.post('/google-login', loginLimiter, noCache, autobanCheck, googleLogin);
+
+router.post('/forgot-password', otpLimiter, validateForgotPassword, forgotPassword);
+
+router.post('/reset-password', otpLimiter, validateResetPassword, resetPassword);
 
 export = router;

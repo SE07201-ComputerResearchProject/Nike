@@ -403,11 +403,11 @@ const markShipped = async (req: OrderRequest, res: Response): Promise<any> => {
       });
     }
 
-    const notes = trackingNumber
-      ? `Shipped via ${carrier ?? 'carrier'} — tracking: ${trackingNumber}`
-      : null;
-
-    await OrderModel.updateStatus(id, 'shipped', { notes });
+    await OrderModel.updateStatus(id, 'shipped', { 
+      carrier: carrier ?? null, 
+      trackingNumber: trackingNumber ?? null,
+      notes: 'Order has been shipped.' // Có thể để lại note chung chung
+    });
 
     res.status(200).json({
       success : true,
@@ -586,6 +586,8 @@ const formatOrderSummary = (o: any) => ({
   productId      : o.product_id,
   sellerUsername : o.seller_username,
   buyerUsername  : o.buyer_username,
+  carrier        : o.carrier,
+  trackingNumber : o.tracking_number,
   createdAt      : o.created_at,
 });
 
@@ -596,6 +598,8 @@ const formatOrderDetail = (o: any) => ({
   unitPrice       : parseFloat(o.unit_price),
   totalAmount     : parseFloat(o.total_amount),
   shippingAddress : safeParseJson(o.shipping_address),
+  carrier        : o.carrier,
+  trackingNumber : o.tracking_number,
   notes           : o.notes,
   buyer           : { id: o.buyer_id,  username: o.buyer_username,  email: o.buyer_email },
   seller          : { id: o.seller_id, username: o.seller_username },

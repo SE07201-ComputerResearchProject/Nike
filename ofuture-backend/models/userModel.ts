@@ -186,6 +186,34 @@ const UserModel = {
       [userId]
     );
     return result;
+  },
+
+  // ─────────────────────────────────────────────
+  // ── NEW: Soft delete user (Self-delete) ──────
+  // ─────────────────────────────────────────────
+  async softDeleteUser(id: string, email: string) {
+    // Thêm prefix deleted_ và timestamp để giải phóng email này cho việc đăng ký lại
+    const deletedEmail = `deleted_${Date.now()}_${email}`;
+    await pool.execute(
+      `UPDATE users 
+       SET is_active = 0, 
+           email = ?, 
+           full_name = 'Deleted User', 
+           avatar_url = NULL,
+           phone = NULL
+       WHERE id = ?`,
+      [deletedEmail, id]
+    );
+  },
+
+  // ─────────────────────────────────────────────
+  // ── NEW: Update password (Reset password) ────
+  // ─────────────────────────────────────────────
+  async updatePassword(id: string, passwordHash: string) {
+    await pool.execute(
+      'UPDATE users SET password_hash = ? WHERE id = ?',
+      [passwordHash, id]
+    );
   }
 };
 

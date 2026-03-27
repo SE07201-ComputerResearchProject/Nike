@@ -13,6 +13,8 @@ import { pool } from '../config/db';
 import PaymentModel from '../models/paymentModel';
 import MoMoClient, { MoMoCallbackData } from './MoMoClient';
 import QRCodeGenerator from './QRCodeGenerator';
+import { EventEmitter } from 'events';
+const paymentEventEmitter = new EventEmitter();
 
 // ═════════════════════════════════════════════
 // PHẦN 1: LOGIC GIẢ LẬP (CŨ) - DÀNH CHO ESCROW
@@ -155,6 +157,16 @@ const handleMoMoCallback = async (callbackData: MoMoCallbackData): Promise<void>
 
   const payment = await PaymentModel.findByOrderIdAndMethod(callbackData.orderId, 'momo');
   if (!payment) throw new Error('Payment record not found');
+  
+  // ==========================================
+  // FIX A: KIỂM TRA ĐỐI CHIẾU SỐ TIỀN (Amount Validation)
+  // Ngăn chặn rủi ro kẻ gian mạo danh số tiền trong payload gửi lên MoMo
+  // ==========================================
+  if (Number(payment.amount) !== Number(callbackData.amount)) {
+    logger.error(`[MoMo Fraud] Amount mismatch for order ${callbackData.orderId}. Expected ${payment.amount}, got ${callbackData.amount}`);
+    throw new Error('Amount mismatch detected! Possible fraud.');
+  }
+
   if (payment.status !== 'pending') return;
 
   const isSuccess = callbackData.resultCode === 0;
@@ -164,23 +176,43 @@ const handleMoMoCallback = async (callbackData: MoMoCallbackData): Promise<void>
   try {
     await conn.beginTransaction();
 
-    await conn.execute(
-      `UPDATE payments SET status = ?, transaction_id = ? WHERE id = ?`,
+    // ==========================================
+    // FIX B: CHỐNG RACE CONDITION
+    // Đưa điều kiện status = 'pending' thẳng vào lệnh UPDATE
+    // ==========================================
+    const [updateResult]: any = await conn.execute(
+      `UPDATE payments SET status = ?, transaction_id = ? WHERE id = ? AND status = 'pending'`,
       [newStatus, callbackData.transId || null, payment.id]
     );
 
+    // Nếu affectedRows === 0, nghĩa là lệnh UPDATE không chạm tới dòng nào 
+    // => Payment này đã bị một request Webhook trùng lặp khác xử lý rồi (Status không còn là pending)
+    if (updateResult.affectedRows === 0) {
+      await conn.rollback();
+      logger.warn(`[MoMo] Concurrent webhook detected for payment ${payment.id}. Ignored.`);
+      return;
+    }
+
     if (isSuccess) {
-      await conn.execute(`UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, [callbackData.orderId]);
+      // Cập nhật trạng thái đơn hàng (Order)
+      await conn.execute(
+        `UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, 
+        [callbackData.orderId]
+      );
+      
+      // Chuyển tiền Ký quỹ (Escrow) sang trạng thái 'held' (đang giữ)
       await conn.execute(
         `UPDATE escrow_transactions SET status = 'held', held_at = NOW() WHERE order_id = ? AND status = 'pending'`,
         [callbackData.orderId]
       );
+      
       logger.info(`[MoMo] Payment Success. Order ${callbackData.orderId} paid & funds held in escrow.`);
     } else {
       logger.warn(`[MoMo] Payment Failed for Order ${callbackData.orderId}: ${callbackData.message}`);
     }
 
     await conn.commit();
+    paymentEventEmitter.emit(`payment_update_${payment.id}`, { status: newStatus });
   } catch (err) {
     await conn.rollback();
     logger.error('handleMoMoCallback transaction error:', err);
@@ -238,6 +270,7 @@ const updateQRPaymentStatus = async (paymentId: string, success: boolean): Promi
     }
 
     await conn.commit();
+    paymentEventEmitter.emit(`payment_update_${paymentId}`, { status: newStatus });
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -267,5 +300,6 @@ export = {
   handleMoMoCallback,
   createQRPayment,
   updateQRPaymentStatus,
-  checkPaymentStatus
+  checkPaymentStatus,
+  paymentEventEmitter
 };

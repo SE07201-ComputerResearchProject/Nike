@@ -47,6 +47,8 @@ const adminRoutes    = require('./routes/adminRoutes');     // Phase 9
 const mfaRoutes      = require('./routes/mfaRoutes');       // Phase 11 
 const chatRoutes     = require('./routes/chatRoutes');      // Phase 12
 const paymentRoutes  = require('./routes/paymentRoutes');
+const sampleRoutes   = require('./routes/sampleRoutes');
+const disputeRoutes  = require('./routes/disputeRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -208,6 +210,8 @@ app.use('/api/admin',    adminRoutes);    // Phase 9
 app.use('/api/mfa',      mfaRoutes);      // Phase 11
 app.use('/api/chat',     chatRoutes);     // Phase 12
 app.use('/api/payments', paymentRoutes);
+app.use('/api/samples',  sampleRoutes);
+app.use('/api/disputes', disputeRoutes);
 
 // ────────────────────────────────────────────
 // 7. 404 HANDLER

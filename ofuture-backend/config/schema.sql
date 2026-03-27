@@ -141,6 +141,8 @@ CREATE TABLE IF NOT EXISTS orders (
                     'refunded'
                   )               NOT NULL DEFAULT 'pending',
   shipping_address JSON           NULL,                      -- { street, city, country, zip }
+  carrier           VARCHAR(100)    NULL, -- MỚI THÊM: Tên đơn vị vận chuyển
+  tracking_number   VARCHAR(100)    NULL, -- MỚI THÊM: Mã vận đơn
   notes           TEXT            NULL,
   cancelled_at    DATETIME        NULL,
   completed_at    DATETIME        NULL,
@@ -348,6 +350,64 @@ CREATE TABLE IF NOT EXISTS outbox_events (
   PRIMARY KEY (id),
   INDEX idx_outbox_status_next (status, next_run_at),
   INDEX idx_outbox_aggregate (aggregate_type, aggregate_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE 10: sample_requests
+-- Quản lý luồng xin hàng mẫu, duyệt mẫu và chuyển đổi thành đơn hàng.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS sample_requests (
+  id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+  product_id      CHAR(36)        NOT NULL,
+  buyer_id        CHAR(36)        NOT NULL,
+  seller_id       CHAR(36)        NOT NULL,
+  deposit_amount  DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,
+  status          ENUM(
+                    'requested',
+                    'approved',
+                    'shipped',
+                    'returned',
+                    'converted_to_order',
+                    'cancelled'
+                  )               NOT NULL DEFAULT 'requested',
+  notes           TEXT            NULL,
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  INDEX idx_samples_buyer_id   (buyer_id),
+  INDEX idx_samples_seller_id  (seller_id),
+  INDEX idx_samples_status     (status),
+  CONSTRAINT fk_samples_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_samples_buyer   FOREIGN KEY (buyer_id)   REFERENCES users (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_samples_seller  FOREIGN KEY (seller_id)  REFERENCES users (id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE 11: disputes
+-- Quản lý khiếu nại, bằng chứng và quyết định xử lý của Admin
+-- ============================================================
+CREATE TABLE IF NOT EXISTS disputes (
+  id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+  order_id        CHAR(36)        NOT NULL,
+  complainant_id  CHAR(36)        NOT NULL, -- Người tạo khiếu nại (thường là Buyer)
+  reason          TEXT            NOT NULL,
+  evidence_url    VARCHAR(255)    NULL,     -- Link ảnh/video bằng chứng
+  status          ENUM(
+                    'pending',            -- Đang chờ Admin xử lý
+                    'resolved_refunded',  -- Admin xử thắng cho Buyer -> Hoàn tiền
+                    'resolved_released',  -- Admin xử thắng cho Seller -> Giải ngân
+                    'rejected'            -- Bác bỏ khiếu nại
+                  )               NOT NULL DEFAULT 'pending',
+  resolved_at     DATETIME        NULL,
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  INDEX idx_disputes_order_id (order_id),
+  INDEX idx_disputes_status   (status),
+  CONSTRAINT fk_disputes_order FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_disputes_complainant FOREIGN KEY (complainant_id) REFERENCES users (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ==========================================================
