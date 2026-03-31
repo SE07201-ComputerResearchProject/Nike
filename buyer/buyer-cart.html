@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O'Future - Cart</title>
+  <link rel="stylesheet" href="css/buyer.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="buyer-home.html">Dashboard</a>
+        <a href="buyer-products.html">Products</a>
+        <a class="active" href="buyer-cart.html">Cart</a>
+        <a href="buyer-checkout.html">Checkout</a>
+        <a href="buyer-orders.html">Orders</a>
+        <a href="buyer-profile.html">Profile</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="search-box"><input type="text" placeholder="Tìm sản phẩm..."></div>
+        <div class="top-actions">
+          <div class="icon-btn">🔔</div>
+          <div class="avatar">N</div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Giỏ hàng</h1>
+        <p>Kiểm tra lại số lượng, giá tạm tính trước khi thanh toán.</p>
+      </div>
+
+      <div class="grid grid-2">
+        <section class="card">
+          <div class="cart-item">
+            <img src="https://picsum.photos/200/200?8" alt="">
+            <div>
+              <h3>Mì gói thùng 30 gói</h3>
+              <p class="muted">Nhà cung cấp: Hưng Phát</p>
+            </div>
+            <div><strong>125.000đ</strong></div>
+            <div class="qty-box"><input type="number" value="10"></div>
+            <div><strong>1.250.000đ</strong></div>
+            <button class="btn btn-danger">Xóa</button>
+          </div>
+
+          <div class="cart-item">
+            <img src="https://picsum.photos/200/200?9" alt="">
+            <div>
+              <h3>Nước rửa chén 3.6L</h3>
+              <p class="muted">Nhà cung cấp: Gia Dụng Xanh</p>
+            </div>
+            <div><strong>96.000đ</strong></div>
+            <div class="qty-box"><input type="number" value="12"></div>
+            <div><strong>1.152.000đ</strong></div>
+            <button class="btn btn-danger">Xóa</button>
+          </div>
+        </section>
+
+        <aside class="card">
+          <h2 class="section-title">Tóm tắt đơn hàng</h2>
+          <div class="summary-box">
+            <div class="summary-item">
+              <span>Tạm tính</span>
+              <strong>2.402.000đ</strong>
+            </div>
+            <div class="summary-item">
+              <span>Phí nền tảng dự kiến</span>
+              <strong>72.060đ</strong>
+            </div>
+            <div class="summary-item">
+              <span>Phí vận chuyển</span>
+              <strong>80.000đ</strong>
+            </div>
+            <div class="summary-item total">
+              <span>Tổng thanh toán</span>
+              <strong>2.554.060đ</strong>
+            </div>
+          </div>
+
+          <a href="buyer-checkout.html" class="btn btn-primary" style="width:100%; text-align:center; margin-top:16px;">
+            Tiến hành thanh toán
+          </a>
+        </aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

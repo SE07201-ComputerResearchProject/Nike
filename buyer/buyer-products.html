@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O'Future - Products</title>
+  <link rel="stylesheet" href="css/buyer.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="buyer-home.html">Dashboard</a>
+        <a class="active" href="buyer-products.html">Products</a>
+        <a href="buyer-cart.html">Cart</a>
+        <a href="buyer-checkout.html">Checkout</a>
+        <a href="buyer-orders.html">Orders</a>
+        <a href="buyer-profile.html">Profile</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="search-box"><input type="text" placeholder="Tìm sản phẩm..."></div>
+        <div class="top-actions">
+          <div class="icon-btn">🔔</div>
+          <div class="avatar">N</div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Danh sách sản phẩm</h1>
+        <p>Tìm kiếm, lọc và so sánh nguồn hàng phù hợp với nhu cầu kinh doanh của bạn.</p>
+      </div>
+
+      <div class="filters">
+        <input type="text" placeholder="Tên sản phẩm">
+        <select>
+          <option>Danh mục</option>
+          <option>Thực phẩm</option>
+          <option>Gia dụng</option>
+          <option>Mỹ phẩm</option>
+        </select>
+        <select>
+          <option>Khoảng giá</option>
+          <option>Dưới 100.000đ</option>
+          <option>100.000đ - 500.000đ</option>
+          <option>Trên 500.000đ</option>
+        </select>
+        <select>
+          <option>Sắp xếp</option>
+          <option>Giá thấp đến cao</option>
+          <option>Giá cao đến thấp</option>
+          <option>Mới nhất</option>
+        </select>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="product-card">
+          <img src="https://picsum.photos/400/240?4" alt="">
+          <div class="product-body">
+            <h3><a href="buyer-product-detail.html">Mì gói thùng 30 gói</a></h3>
+            <div class="muted">Nhà cung cấp: Hưng Phát</div>
+            <div class="price">125.000đ</div>
+            <p class="muted">MOQ: 10 thùng</p>
+            <button class="btn btn-primary add-cart-btn">Thêm giỏ hàng</button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <img src="https://picsum.photos/400/240?5" alt="">
+          <div class="product-body">
+            <h3><a href="buyer-product-detail.html">Dầu ăn chai 5L</a></h3>
+            <div class="muted">Nhà cung cấp: Việt Oil</div>
+            <div class="price">210.000đ</div>
+            <p class="muted">MOQ: 5 chai</p>
+            <button class="btn btn-primary add-cart-btn">Thêm giỏ hàng</button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <img src="https://picsum.photos/400/240?6" alt="">
+          <div class="product-body">
+            <h3><a href="buyer-product-detail.html">Nước rửa chén 3.6L</a></h3>
+            <div class="muted">Nhà cung cấp: Gia Dụng Xanh</div>
+            <div class="price">96.000đ</div>
+            <p class="muted">MOQ: 12 chai</p>
+            <button class="btn btn-primary add-cart-btn">Thêm giỏ hàng</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/buyer.js"></script>
+</body>
+</html>

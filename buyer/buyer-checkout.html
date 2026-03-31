@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O'Future - Checkout</title>
+  <link rel="stylesheet" href="css/buyer.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="buyer-home.html">Dashboard</a>
+        <a href="buyer-products.html">Products</a>
+        <a href="buyer-cart.html">Cart</a>
+        <a class="active" href="buyer-checkout.html">Checkout</a>
+        <a href="buyer-orders.html">Orders</a>
+        <a href="buyer-profile.html">Profile</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="search-box"><input type="text" placeholder="Tìm kiếm..."></div>
+        <div class="top-actions">
+          <div class="icon-btn">🔔</div>
+          <div class="avatar">N</div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Thanh toán & Ký quỹ</h1>
+        <p>Xác nhận thông tin giao hàng và thanh toán an toàn qua O'Future.</p>
+      </div>
+
+      <div class="grid grid-2">
+        <section class="card">
+          <h2 class="section-title">Thông tin nhận hàng</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Người nhận</label>
+              <input type="text" value="Nguyễn Thị Nghi">
+            </div>
+            <div class="form-group">
+              <label>Số điện thoại</label>
+              <input type="text" value="09xxxxxxxx">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Địa chỉ</label>
+            <input type="text" value="123 Đường ABC, Quận XYZ, TP.HCM">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phương thức thanh toán</label>
+              <select>
+                <option>Chuyển khoản</option>
+                <option>Ví điện tử</option>
+                <option>Thanh toán qua ngân hàng</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Ai chịu phí nền tảng?</label>
+              <select>
+                <option>Buyer chịu</option>
+                <option>Seller chịu</option>
+                <option>Thỏa thuận chia đôi</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Ghi chú đơn hàng</label>
+            <textarea rows="4" placeholder="Ghi chú thêm nếu cần"></textarea>
+          </div>
+        </section>
+
+        <aside class="card">
+          <h2 class="section-title">Chi tiết thanh toán</h2>
+          <div class="summary-box">
+            <div class="summary-item">
+              <span>Tạm tính</span>
+              <strong>2.402.000đ</strong>
+            </div>
+            <div class="summary-item">
+              <span>Phí nền tảng (3%)</span>
+              <strong>72.060đ</strong>
+            </div>
+            <div class="summary-item">
+              <span>Vận chuyển</span>
+              <strong>80.000đ</strong>
+            </div>
+            <div class="summary-item total">
+              <span>Tổng thanh toán</span>
+              <strong>2.554.060đ</strong>
+            </div>
+          </div>
+
+          <p class="muted" style="margin-top:14px;">
+            Tiền sẽ được giữ trong hệ thống ký quỹ cho đến khi bạn xác nhận đã nhận đúng hàng.
+          </p>
+
+          <button id="checkoutBtn" class="btn btn-primary" style="width:100%; margin-top:16px;">
+            Xác nhận đặt hàng
+          </button>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/buyer.js"></script>
+</body>
+</html>
