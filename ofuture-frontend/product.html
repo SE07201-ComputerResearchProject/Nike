@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O FUTURE | Modern Footwear & Tech</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fbff;
+            --primary: #0062ff;
+            --dark: #0f172a;
+            --secondary: #64748b;
+            --white: #ffffff;
+            --accent: #00d2ff;
+            --radius-lg: 24px;
+            --radius-md: 12px;
+            --shadow: 0 20px 40px -15px rgba(0, 98, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; background: var(--bg); color: var(--dark); }
+
+        /* Navigation */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 6%; background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 1000;
+            border-bottom: 1px solid rgba(0, 98, 255, 0.05);
+        }
+        .logo { font-weight: 800; font-size: 24px; color: var(--dark); letter-spacing: -1.5px; }
+        .logo span { color: var(--primary); }
+
+        .nav-links { display: flex; gap: 30px; font-weight: 600; font-size: 14px; }
+        .nav-links a { cursor: pointer; color: var(--secondary); text-decoration: none; }
+        .nav-links a:hover { color: var(--primary); }
+
+        .cart-btn {
+            background: var(--dark); color: white; padding: 10px 22px;
+            border-radius: 50px; cursor: pointer; font-weight: 600; position: relative;
+            display: flex; align-items: center; gap: 8px;
+        }
+        #cart-count { background: var(--primary); padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+
+        /* Hero */
+        .hero { padding: 80px 6% 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+        .hero h1 { font-size: 56px; line-height: 1.1; margin-bottom: 15px; letter-spacing: -2px; }
+        .hero p { color: var(--secondary); font-size: 18px; line-height: 1.6; }
+
+        /* Filter Tabs */
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 40px; }
+        .tab { padding: 10px 24px; border-radius: 50px; border: 1px solid #e2e8f0; cursor: pointer; font-weight: 600; background: white; }
+        .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Grid */
+        .container { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 35px; padding: 0 6% 80px; }
+        
+        .product-card {
+            background: var(--white); border-radius: var(--radius-lg); padding: 15px;
+            box-shadow: var(--shadow); position: relative; overflow: hidden;
+        }
+.product-card:hover { transform: translateY(-12px); }
+        
+        .badge { position: absolute; top: 25px; left: 25px; background: var(--white); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; z-index: 10; }
+
+        .img-box { background: #f1f5f9; border-radius: 20px; height: 300px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .img-box img { width: 90%; transform: rotate(-15px); }
+        .product-card:hover img { transform: rotate(0) scale(1.1); }
+
+        .info { padding: 20px 10px; }
+        .info h3 { margin: 0; font-size: 20px; font-weight: 800; }
+        .info .cat { color: var(--secondary); font-size: 13px; text-transform: uppercase; margin-bottom: 10px; display: block; }
+        
+        .size-selector { display: flex; gap: 8px; margin: 15px 0; }
+        .size-opt { width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+        .size-opt.selected { background: var(--dark); color: white; border-color: var(--dark); }
+
+        .bottom-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+        .price { font-size: 22px; font-weight: 800; color: var(--primary); }
+        .add-btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; }
+
+        /* Sidebar Cart */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); opacity: 0; visibility: hidden; z-index: 1500; backdrop-filter: blur(4px); }
+        .drawer-overlay.active { opacity: 1; visibility: visible; }
+
+        .cart-drawer {
+            position: fixed; right: -450px; top: 0; width: 420px; height: 100%;
+            background: var(--white); z-index: 2000; padding: 40px; display: flex; flex-direction: column;
+        }
+        .cart-drawer.active { right: 0; }
+
+        .cart-item { display: flex; gap: 15px; margin-bottom: 25px; align-items: center; }
+        .cart-item img { width: 80px; height: 80px; background: #f1f5f9; border-radius: 12px; }
+
+        .promo-section { margin-top: 20px; display: flex; gap: 10px; }
+        .promo-section input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; outline: none; }
+        
+        .checkout-btn {
+            width: 100%; padding: 20px; background: var(--dark); color: white;
+            border: none; border-radius: 18px; font-weight: 800; font-size: 16px;
+            margin-top: 20px; cursor: pointer;
+        }
+        .checkout-btn:hover { background: var(--primary); box-shadow: 0 10px 25px rgba(0, 98, 255, 0.3); }
+
+        /* Payment Success Modal */
+        .modal { position: fixed; inset: 0; background: white; z-index: 5000; display: none; align-items: center; justify-content: center; text-align: center; }
+    </style>
+</head>
+<!-- Product Detail Modal -->
+<div class="modal" id="product-modal">
+    <div style="background:white; padding:40px; border-radius:20px; max-width:900px; width:90%; display:flex; gap:30px;">
+        
+        <img id="modal-img" style="width:50%; border-radius:20px; background:#f1f5f9;">
+        
+        <div style="flex:1">
+            <h2 id="modal-name"></h2>
+            <p id="modal-cat" style="color:gray;"></p>
+            <h3 id="modal-price" style="color:var(--primary)"></h3>
+
+            <div class="size-selector" id="modal-sizes"></div>
+
+            <button class="add-btn" style="margin-top:20px;" onclick="addFromModal()">Add to Bag</button>
+            <br><br>
+            <button onclick="closeModal()" style="background:none;border:none;color:red;cursor:pointer;">Close</button>
+        </div>
+
+    </div>
+</div>
+<body>
+
+<nav class="navbar">
+    <div class="logo">O <span>FUTURE</span></div>
+    <div class="nav-links">
+        <a onclick="filter('All')">New Releases</a>
+        <a onclick="filter('Lifestyle')">Lifestyle</a>
+        <a onclick="filter('Running')">Running</a>
+    </div>
+    <div class="cart-btn" onclick="toggleCart(true)">
+        Bag <span id="cart-count">0</span>
+    </div>
+</nav>
+
+<header class="hero">
+    <p style="text-transform: uppercase; letter-spacing: 3px; font-weight: 700; color: var(--primary); font-size: 13px;">Evolution of Motion</p>
+    <h1>STEP INTO THE FUTURE</h1>
+    <p>Experience precision-engineered footwear designed for the digital age. Lightweight, sustainable, and undeniably bold.</p>
+</header>
+
+<div class="tabs">
+    <button class="tab active" onclick="setTab(this, 'All')">All Collection</button>
+    <button class="tab" onclick="setTab(this, 'Running')">Performance</button>
+    <button class="tab" onclick="setTab(this, 'Lifestyle')">Urban Style</button>
+</div>
+
+<div class="container" id="product-list"></div>
+
+<div class="drawer-overlay" id="overlay" onclick="toggleCart(false)"></div>
+<div class="cart-drawer" id="cart-drawer">
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <h2 style="font-size: 28px;">My Bag</h2>
+        <span onclick="toggleCart(false)" style="cursor:pointer; font-size: 32px;">&times;</span>
+    </div>
+    <div id="cart-content" style="flex:1; overflow-y:auto; margin: 30px 0;"></div>
+    
+    <div class="promo-section">
+        <input type="text" id="promo-input" placeholder="Promo code (Try FUTURE20)">
+        <button onclick="applyPromo()" style="padding: 10px 15px; border-radius: 8px; border: none; background: #eee; cursor:pointer;">Apply</button>
+    </div>
+
+    <div style="padding-top: 20px; border-top: 1px solid #eee;">
+        <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+            <span style="color: var(--secondary)">Subtotal</span>
+            <span id="subtotal" style="font-weight: 600;">$0</span>
+        </div>
+<div id="discount-row" style="display:none; justify-content: space-between; margin-bottom: 10px; color: #10b981;">
+            <span>Discount (20%)</span>
+            <span id="discount-val">-$0</span>
+        </div>
+        <div style="display:flex; justify-content: space-between;">
+            <span style="font-size: 20px; font-weight: 800;">Total</span>
+            <span id="total-price" style="font-size: 22px; font-weight: 800; color: var(--primary);">$0</span>
+        </div>
+        <button class="checkout-btn" onclick="processOrder()">CHECKOUT NOW</button>
+    </div>
+</div>
+
+<div class="modal" id="success-modal">
+    <div>
+        <div style="font-size: 80px;">🚀</div>
+        <h1 style="font-size: 40px; margin: 20px 0;">Order Dispatched!</h1>
+        <p style="color: var(--secondary); max-width: 400px; margin: 0 auto 30px;">Your O Future gear is being prepared. Check your email for tracking details.</p>
+        <button class="checkout-btn" style="width: auto; padding: 15px 40px;" onclick="location.reload()">Back to Home</button>
+    </div>
+</div>
+
+<script>
+    let currentProduct = null;
+let modalSize = null;
+
+function openModal(id) {
+    const p = products.find(x => x.id === id);
+    currentProduct = p;
+
+    document.getElementById("modal-img").src = p.img;
+    document.getElementById("modal-name").innerText = p.name;
+    document.getElementById("modal-cat").innerText = p.cat;
+    document.getElementById("modal-price").innerText = "$" + p.price;
+
+    // render size
+    document.getElementById("modal-sizes").innerHTML =
+        [7,8,9,10,11].map(s => `
+            <div class="size-opt" onclick="selectModalSize(${s})">${s}</div>
+        `).join('');
+
+    document.getElementById("product-modal").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("product-modal").style.display = "none";
+}
+
+function selectModalSize(size) {
+    modalSize = size;
+
+    document.querySelectorAll("#modal-sizes .size-opt").forEach(el => {
+        el.classList.remove("selected");
+        if(parseInt(el.innerText) === size) el.classList.add("selected");
+    });
+}
+
+function addFromModal() {
+    if(!modalSize) return alert("Select size!");
+
+    const item = cart.find(x => x.id === currentProduct.id && x.size === modalSize);
+
+    if(item) item.qty++;
+    else cart.push({...currentProduct, size: modalSize, qty: 1});
+
+    updateCart();
+    closeModal();
+    toggleCart(true);
+}
+    const products = [
+        {id: 1, name: "Flux Runner v1", price: 180, cat: "Running", badge: "TOP RATED", img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80"},
+        {id: 2, name: "Cyber-Dunk Low", price: 140, cat: "Lifestyle", badge: "NEW", img: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600&q=80"},
+        {id: 3, name: "Aero Glide 400", price: 210, cat: "Running", badge: "LIMITED", img: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&q=80"},
+{id: 4, name: "Minimalist O1", price: 125, cat: "Lifestyle", badge: "ESSENTIAL", img: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&q=80"}
+    ];
+
+    let cart = [];
+    let discount = 0;
+    let selectedSizes = {};
+
+    function render(data) {
+        const container = document.getElementById("product-list");
+        container.innerHTML = data.map(p => `
+            <div class="product-card">
+                <span class="badge">${p.badge}</span>
+                <div class="img-box" onclick="openModal(${p.id})">
+    <img src="${p.img}">
+</div>
+                    <span class="cat">${p.cat}</span>
+                    <h3>${p.name}</h3>
+                    <div class="size-selector">
+                        ${[7,8,9,10,11].map(s => `
+                            <div class="size-opt ${selectedSizes[p.id] === s ? 'selected' : ''}" 
+                                 onclick="selectSize(${p.id}, ${s})">${s}</div>
+                        `).join('')}
+                    </div>
+                    <div class="bottom-row">
+                        <span class="price">$${p.price}</span>
+                        <button class="add-btn" onclick="addToBag(${p.id})">Add to Bag</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function selectSize(pid, size) {
+        selectedSizes[pid] = size;
+        render(products);
+    }
+
+    function addToBag(id) {
+        if(!selectedSizes[id]) return alert("Please select a size first!");
+        
+        const p = products.find(x => x.id === id);
+        const item = cart.find(x => x.id === id && x.size === selectedSizes[id]);
+        
+        if(item) item.qty++;
+        else cart.push({...p, size: selectedSizes[id], qty: 1});
+        
+        updateCart();
+        toggleCart(true);
+    }
+
+    function updateCart() {
+        const content = document.getElementById("cart-content");
+        let subtotal = 0;
+        
+        content.innerHTML = cart.map(i => {
+            subtotal += i.price * i.qty;
+            return `
+                <div class="cart-item">
+                    <img src="${i.img}">
+                    <div style="flex:1">
+                        <div style="font-weight:700">${i.name}</div>
+                        <div style="font-size:12px; color:var(--secondary)">Size ${i.size} | Qty ${i.qty}</div>
+                        <div style="font-weight:800; color:var(--primary); margin-top:5px">$${i.price * i.qty}</div>
+                    </div>
+                    <button onclick="remove(${cart.indexOf(i)})" style="border:none; background:none; color:red; cursor:pointer;">&times;</button>
+                </div>
+            `;
+        }).join('');
+
+        const finalTotal = subtotal * (1 - discount);
+        document.getElementById("subtotal").innerText = "$" + subtotal;
+        document.getElementById("discount-val").innerText = "-$" + (subtotal * discount);
+document.getElementById("total-price").innerText = "$" + finalTotal.toFixed(0);
+        document.getElementById("cart-count").innerText = cart.reduce((a, b) => a + b.qty, 0);
+    }
+
+    function applyPromo() {
+        const code = document.getElementById("promo-input").value.toUpperCase();
+        if(code === 'FUTURE20') {
+            discount = 0.2;
+            document.getElementById("discount-row").style.display = 'flex';
+            updateCart();
+            alert("Code Applied: 20% OFF!");
+        } else {
+            alert("Invalid code.");
+        }
+    }
+
+    function toggleCart(show) {
+        document.getElementById("cart-drawer").classList.toggle("active", show);
+        document.getElementById("overlay").classList.toggle("active", show);
+    }
+
+    function remove(idx) {
+        cart.splice(idx, 1);
+        updateCart();
+    }
+
+    function filter(cat) {
+        if(cat === 'All') render(products);
+        else render(products.filter(p => p.cat === cat));
+    }
+
+    function setTab(btn, cat) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        filter(cat);
+    }
+async function processOrder() {
+
+  if (cart.length === 0) {
+    alert("Cart is empty");
+    return;
+  }
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    alert("Please login first");
+    return;
+  }
+
+  const item = cart[0]; // backend hiện chỉ support 1 product
+
+  const orderData = {
+    productId: item.id,
+    quantity: item.qty,
+    shippingAddress: {
+      fullName: "Test User",
+      city: "Ho Chi Minh",
+      address: "Demo address"
+    },
+    notes: ""
+  };
+
+  try {
+    const res = await fetch("http://localhost:5000/api/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify(orderData)
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById("success-modal").style.display = "flex";
+      cart = [];
+      updateCart();
+    } else {
+      alert(data.message);
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Server error");
+  }
+}
+    
+
+    render(products);
+</script>
+
+</body>
+</html>

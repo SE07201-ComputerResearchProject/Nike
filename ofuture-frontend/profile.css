@@ -1,0 +1,226 @@
+/* Base reset and page layout to match settings UI */
+:root{--bg:#f7fbff;--card:#fff;--muted:#6b7280;--accent:#2563eb;--radius:12px}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:#0f172a;line-height:1.6;overflow-x:hidden}
+
+/* hide header/footer embeds to avoid page interference */
+.header-embed,.footer-embed,.logo-panel{display:none}
+
+/* Main settings layout: sidebar + content */
+.settings-layout{display:grid;grid-template-columns:220px 1fr;gap:32px;max-width:1200px;margin:28px auto;padding:0 16px;box-sizing:border-box}
+
+.settings-sidebar{background:transparent}
+.settings-sidebar nav ul{list-style:none;padding:0;margin:0}
+.settings-sidebar nav li{padding:12px 14px;border-radius:8px;color:var(--muted);cursor:pointer}
+.settings-sidebar nav li.active{background:#fff;color:#0b1220;box-shadow:0 6px 18px rgba(15,23,42,0.06)}
+
+.settings-content{min-height:60vh}
+.breadcrumb{font-size:0.9rem;color:var(--muted);margin-bottom:8px}
+.page-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+.page-head-left{min-width:0}
+.page-heading{margin:0 0 6px 0;font-size:1.25rem}
+.page-sub{margin:0;color:var(--muted)}
+.header-actions{display:flex;align-items:center;gap:8px}
+.back-btn{padding:8px 12px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:transparent;text-decoration:none;color:inherit}
+.back-btn:hover{background:#f1f5ff}
+
+.panel-card{background:var(--card);padding:20px;border-radius:var(--radius);box-shadow:0 8px 30px rgba(15,23,42,0.06);margin-bottom:16px}
+.panel-card h3{margin:0 0 6px 0}
+.muted{color:var(--muted)}
+
+.basic-form{display:flex;flex-direction:column;gap:12px}
+.basic-form .field{display:block;font-size:0.95rem}
+.basic-form input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);font-size:0.95rem}
+.form-actions{display:flex;justify-content:flex-end;margin-top:8px}
+
+.inline-row{display:flex;gap:12px;align-items:center}
+.inline-row .field{flex:1}
+.inline-btn{align-self:flex-end;padding:10px 14px}
+
+/* Buttons */
+.btn{padding:8px 12px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:transparent;cursor:pointer}
+.btn.primary{background:linear-gradient(90deg,var(--accent),#06b6d4);color:#fff;border:0}
+.submit-btn{padding:10px 14px;border-radius:8px;border:0;background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff}
+
+/* Danger */
+.delete-btn{background:#dc3545;color:#fff;border:0;padding:10px 14px;border-radius:8px}
+
+/* Responsive */
+@media (max-width:900px){
+	.settings-layout{grid-template-columns:180px 1fr;gap:18px;padding:0 12px}
+}
+@media (max-width:768px){
+	.settings-layout{grid-template-columns:1fr;gap:12px;margin:12px auto}
+	.settings-sidebar{order:0}
+	.settings-sidebar nav li{display:inline-block;margin-right:8px}
+	.settings-sidebar nav{overflow-x:auto}
+	.inline-row{flex-direction:column}
+	.form-actions{justify-content:flex-start}
+}
+
+
+.input-group{margin-bottom:12px}
+.input-group input, .input-group select{
+	width:100%;
+	padding:13px 12px;
+	border-radius:10px;
+	border:1px solid rgba(16,24,40,0.08);
+	background:linear-gradient(180deg,#fff,#fbfdff);
+	box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 12px rgba(16,24,40,0.04);
+	font-size:15px;
+}
+.input-group input:focus, .input-group select:focus{
+	outline:none;
+	box-shadow: 0 6px 18px rgba(30,64,175,0.12);
+	border-color: rgba(30,64,175,0.32);
+}
+
+.submit-btn{
+	width:100%;
+	padding:14px;
+	border-radius:12px;
+	border:none;
+	background-image:linear-gradient(90deg,#4f46e5,#06b6d4);
+	color:#fff;
+	font-weight:700;
+	cursor:pointer;
+	font-size:15px;
+	box-shadow:0 10px 24px rgba(79,70,229,0.12);
+	transition:transform .12s ease, box-shadow .12s ease;
+	margin-bottom:12px;
+}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(79,70,229,0.16)}
+
+.submit-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none !important;
+}
+
+.submit-btn:disabled:hover {
+	box-shadow: 0 10px 24px rgba(79, 70, 229, 0.12) !important;
+}
+
+.delete-btn{
+	width:100%;
+	padding:14px;
+	border-radius:12px;
+	border:none;
+	background-color: #dc3545;
+	color:#fff;
+	font-weight:700;
+	cursor:pointer;
+	font-size:15px;
+	box-shadow:0 10px 24px rgba(220,53,69,0.12);
+	transition:transform .12s ease, box-shadow .12s ease;
+	margin-bottom:12px;
+}
+.delete-btn:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(220,53,69,0.16)}
+
+#profile-container h3 {
+	margin-top: 20px;
+	font-size: 20px;
+	color: #333;
+}
+
+#profile-container p {
+	margin: 8px 0;
+	font-size: 14px;
+}
+
+#users-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 20px;
+	font-size: 14px;
+}
+
+#users-table th, #users-table td {
+	border: 1px solid rgba(16,24,40,0.08);
+	padding: 8px;
+	text-align: left;
+}
+
+#users-table th {
+	background-color: rgba(15,23,42,0.02);
+}
+
+#pagination {
+	margin-top: 20px;
+	text-align: center;
+}
+
+#pagination button {
+	margin: 0 10px;
+	padding: 8px 12px;
+}
+
+@keyframes logo-enter-left {
+	0% { opacity: 0; transform: translateY(-50%) translateX(-20px); }
+	100% { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+@keyframes register-enter-right {
+	0% { opacity: 0; transform: translateY(-50%) translateX(20px); }
+	100% { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+@keyframes rainbow {
+	0% { background-position: 0% 50%; }
+	50% { background-position: 100% 50%; }
+	100% { background-position: 0% 50%; }
+}
+
+/* ── Responsive Design ─────────────────── */
+@media (max-width: 768px) {
+	.main-container {
+		flex-direction: column;
+		gap: 20px;
+		padding: 100px 18px 120px;
+	}
+
+	.logo-panel {
+		position: static;
+		transform: none;
+		width: 100%;
+		text-align: center;
+		margin-bottom: 20px;
+	}
+
+	.logo-image {
+		width: min(70vw, 250px);
+	}
+
+	.profile-box {
+		position: static;
+		transform: none;
+		width: 100%;
+		max-width: 95vw;
+		padding: 30px 20px;
+		margin: 0 auto;
+	}
+
+	.profile-title {
+		font-size: 28px;
+	}
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+	.main-container {
+		gap: 20px;
+	}
+
+	.logo-panel {
+		left: 6vw;
+		width: min(25vw, 280px);
+	}
+
+	.logo-image {
+		width: min(26vw, 320px);
+	}
+
+	.profile-box {
+		right: 6vw;
+		width: 550px;
+	}
+}

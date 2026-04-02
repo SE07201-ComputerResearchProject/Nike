@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Footer</title>
+	<style>
+		:root{box-sizing:border-box}
+		*,*::before,*::after{box-sizing:inherit}
+		body{
+			margin:0;
+			font-family: Arial, sans-serif;
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			background:transparent;
+			height:100vh;
+		}
+		.footer-grid{
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			gap:8px;
+			padding:10px 16px;
+			border-radius:16px;
+			background:rgba(255,255,255,0.62);
+			backdrop-filter:blur(8px);
+			-webkit-backdrop-filter:blur(8px);
+			border:1px solid rgba(255,255,255,0.8);
+			box-shadow:0 8px 20px rgba(19, 35, 65, 0.08);
+			flex-wrap:wrap;
+		}
+		.footer-item{
+			padding:7px 12px;
+			border-radius:999px;
+			background:rgba(255,255,255,0.72);
+			border:1px solid rgba(207, 220, 242, 0.85);
+			white-space:nowrap;
+			color:#475569;
+			font-size:12px;
+			font-weight:600;
+		}
+	</style>
+</head>
+<body>
+	<div class="footer-grid" aria-label="Chan trang">
+		<div class="footer-item">Dich Vu Khach Hang</div>
+		<div class="footer-item">O'future Viet Nam</div>
+		<div class="footer-item">Thanh Toan</div>
+		<div class="footer-item">Dia Chi</div>
+	</div>
+</body>
+</html>

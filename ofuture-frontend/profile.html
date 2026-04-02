@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - OFuture</title>
+    <link rel="stylesheet" href="profile.css">
+    <style>
+        :root{box-sizing:border-box}
+        *,*::before,*::after{box-sizing:inherit}
+    </style>
+</head>
+<body>
+    <iframe class="header-embed" src="header.html" title="Site Header" loading="eager"></iframe>
+
+    <main class="settings-layout">
+        <aside class="settings-sidebar">
+            <nav>
+                <ul>
+                    <li class="active">Profile</li>
+                </ul>
+            </nav>
+        </aside>
+
+        <section class="settings-content">
+            <div class="page-header">
+                <div class="page-head-left">
+                    <h1 class="page-heading">Profile</h1>
+                    <p class="page-sub">Manage your profile settings</p>
+                </div>
+                <div class="header-actions">
+                    <a href="index.html" class="btn ghost back-btn" id="homeBtn">Home</a>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <h3>Basic info</h3>
+                <p class="muted">Tell us your basic info details</p>
+
+                <form id="update-form" class="basic-form">
+                    <label class="field">Full name
+                        <input type="text" id="fullName" name="fullName" placeholder="Full name" required>
+                    </label>
+
+                    <div class="inline-row">
+                        <label class="field">Email
+                            <input type="email" id="emailInput" placeholder="email@example.com" readonly>
+                        </label>
+                    </div>
+
+                    <label class="field">Phone number
+                        <input type="tel" id="phone" name="phone" placeholder="+84 9xx xxx xxx">
+                    </label>
+
+                    <label class="field">Profile picture
+                        <input type="url" id="avatar" name="avatar" placeholder="Avatar URL">
+                    </label>
+
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Update</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Keep security and admin sections (collapsed by default) -->
+            <div id="security" class="panel-card">
+                <h3>Security</h3>
+                <button id="logout-all" class="submit-btn">Logout from All Devices</button>
+                <h4>Two-Factor Authentication (MFA)</h4>
+                <p id="mfa-status">Status: Disabled</p>
+                <button id="toggle-mfa" class="submit-btn">Enable MFA</button>
+            </div>
+
+            <div id="admin-panel" class="panel-card" style="display:none">
+                <h3>User Management</h3>
+                <!-- admin content remains -->
+            </div>
+        </section>
+    </main>
+
+    <iframe class="footer-embed" src="footer.html" title="Site Footer" loading="eager"></iframe>
+    <script src="profile.js"></script>
+</body>
+</html>
