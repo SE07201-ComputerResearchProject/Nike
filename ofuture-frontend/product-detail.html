@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O'Future - Product Detail</title>
+  <link rel="stylesheet" href="product-detail.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="buyer-dashboard.html">Dashboard</a>
+        <a class="active" href="product.html">Products</a>
+        <a href="cart.html">Cart</a>
+        <a href="checkout.html">Checkout</a>
+        <a href="orders.html">Orders</a>
+        <a href="profile-management.html">Profile</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="search-box"><input type="text" placeholder="Tìm sản phẩm..."></div>
+        <div class="top-actions">
+          <div class="icon-btn">🔔</div>
+          <div class="avatar">N</div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <section class="card">
+          <div class="product-gallery" style="margin-bottom: 18px;">
+            <img id="productImage" src="" alt="Ảnh sản phẩm" style="border-radius: 18px; width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #f8fafc; border: 1px solid var(--line);">
+            
+            <div id="productThumbnails" style="display: flex; gap: 10px; overflow-x: auto; margin-top: 12px; padding-bottom: 8px;">
+              </div>
+          </div>
+          <h1 id="productName">Đang tải...</h1>
+          <p class="muted" style="margin: 8px 0 14px;">Nhà cung cấp: Hệ thống O'Future</p>
+          <div id="productPrice" class="price">Đang tải...</div>
+          <p id="productDesc" style="margin: 16px 0;">
+            Đang tải mô tả sản phẩm...
+          </p>
+
+          <div class="card" style="padding:16px; margin-top:16px;">
+            <h3 style="margin-bottom:10px;">Giá sỉ theo số lượng</h3>
+            <p>10 - 29 đơn vị: <strong>Giá niêm yết</strong></p>
+            <p>30 - 99 đơn vị: <strong>Giảm 2%</strong></p>
+            <p>100+ đơn vị: <strong>Giảm 5%</strong></p>
+          </div>
+        </section>
+
+        <aside class="card">
+          <h2 class="section-title">Thông tin mua hàng</h2>
+
+          <div class="form-group">
+            <label>Số lượng</label>
+            <input type="number" id="cartQuantity" value="10" min="1">
+          </div>
+
+          <div class="form-group">
+            <label>Ghi chú cho nhà cung cấp</label>
+            <textarea rows="4" placeholder="Ví dụ: cần giao trong 3 ngày, ưu tiên hàng mới..."></textarea>
+          </div>
+
+          <button class="btn btn-primary add-cart-btn" style="width:100%; margin-bottom:10px;">Thêm vào giỏ hàng</button>
+          
+          <button id="btn-request-sample" class="btn btn-outline" style="width:100%; margin-bottom:10px; border-color: var(--accent); color: var(--accent);">🎁 Yêu cầu nhận hàng mẫu</button>
+          
+          <a class="btn btn-outline" href="cart.html" style="width:100%; text-align:center;">Đi đến giỏ hàng</a>
+
+          <div class="summary-box" style="margin-top:18px;">
+            <div class="summary-item">
+              <span>MOQ (Tối thiểu)</span>
+              <strong id="productMoq">Đang tải...</strong>
+            </div>
+            <div class="summary-item">
+              <span>Ký quỹ</span>
+              <strong>2% - 5%</strong>
+            </div>
+            <div class="summary-item">
+              <span>Giao hàng</span>
+              <strong>2 - 5 ngày</strong>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <div id="sampleModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 24px; border-radius: 12px; width: 400px; max-width: 90%;">
+      <h3 style="margin-bottom: 16px;">Yêu cầu nhận hàng mẫu</h3>
+      <div class="form-group">
+        <label>Đề xuất tiền cọc (VNĐ)</label>
+        <input type="number" id="sampleDeposit" placeholder="VD: 50000" min="0">
+      </div>
+      <div class="form-group">
+        <label>Ghi chú cho người bán</label>
+        <textarea id="sampleNotes" rows="3" placeholder="Ví dụ: Tôi muốn xin mẫu thử màu xanh..."></textarea>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button id="closeSampleModal" class="btn btn-outline" style="flex: 1;">Hủy</button>
+        <button id="submitSampleRequest" class="btn btn-primary" style="flex: 1;">Gửi yêu cầu</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="product-detail.js"></script>
+</body>
+</html>

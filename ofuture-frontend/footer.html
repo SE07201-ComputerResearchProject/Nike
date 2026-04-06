@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Shared Footer</title>
+
+  <style id="footer-shared-style">
+    .footer {
+      width: 100%;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #e2e8f0;
+      margin-top: 0;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-family: Arial, sans-serif;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 42px 24px 18px;
+    }
+
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr 1fr;
+      gap: 28px;
+      margin-bottom: 28px;
+    }
+
+    .footer-brand h2 {
+      margin: 0 0 12px;
+      font-size: 1.7rem;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+    }
+
+    .footer-brand p {
+      margin: 0;
+      font-size: 0.96rem;
+      line-height: 1.7;
+      color: #cbd5e1;
+      max-width: 320px;
+    }
+
+    .footer-column h3 {
+      margin: 0 0 14px;
+      font-size: 1rem;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .footer-column ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .footer-column li {
+      margin-bottom: 10px;
+    }
+
+    .footer-column a {
+      text-decoration: none;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+      transition: color 0.25s ease, transform 0.25s ease;
+      display: inline-block;
+    }
+
+    .footer-column a:hover {
+      color: #38bdf8;
+      transform: translateX(4px);
+    }
+
+    .footer-contact p {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 16px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    @media (max-width: 992px) {
+      .footer-top {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .footer-inner {
+        padding: 32px 18px 16px;
+      }
+
+      .footer-top {
+        grid-template-columns: 1fr;
+        gap: 22px;
+      }
+
+      .footer-brand p {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <h2>O'Future</h2>
+          <p>
+            O'Future là nền tảng kết nối nhà bán sỉ và người mua trên toàn quốc,
+            giúp giao dịch dễ dàng hơn, minh bạch hơn và tối ưu chi phí trung gian.
+          </p>
+        </div>
+
+        <div class="footer-column">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="/Nike/ofuture-frontend/index.html">Home</a></li>
+            <li><a href="/Nike/ofuture-frontend/about.html">About</a></li>
+            <li><a href="/Nike/ofuture-frontend/products.html">Products</a></li>
+            <li><a href="/Nike/ofuture-frontend/contact.html">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-column">
+          <h3>Account</h3>
+          <ul>
+            <li><a href="/Nike/ofuture-frontend/loginbd/login.html">Login</a></li>
+            <li><a href="/Nike/ofuture-frontend/register.html">Register</a></li>
+            <li><a href="/Nike/ofuture-frontend/buyer-dashboard.html">Buyer Area</a></li>
+            <li><a href="/Nike/ofuture-frontend/seller-dashboard.html">Seller Area</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-column footer-contact">
+          <h3>Contact</h3>
+          <p>Email: support@ofuture.vn</p>
+          <p>Phone: 0123 456 789</p>
+          <p>Address: Ho Chi Minh City, Vietnam</p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        © 2026 O'Future. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <div id="footer-container"></div>
+  <script src="api.js"></script>
+  <script>
+    async function loadFooter() {
+      try {
+        const response = await fetch('./footer.html');
+        if (!response.ok) throw new Error('Footer file not found');
+
+        const html = await response.text();
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+
+        const style = temp.querySelector('#footer-shared-style');
+        if (style && !document.getElementById('footer-shared-style')) {
+          document.head.appendChild(style.cloneNode(true));
+        }
+
+        const footer = temp.querySelector('footer.footer');
+        if (footer) {
+          document.getElementById('footer-container').appendChild(footer);
+        }
+      } catch (error) {
+        console.error('Could not load footer:', error);
+      }
+    }
+
+    loadFooter();
+  </script>
+</body>
+</html>

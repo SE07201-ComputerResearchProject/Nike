@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giỏ hàng - O'Future</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="cart.css">
+    <style>
+        /* ENHANCED CART BUTTONS - Version 2.0 */
+        
+        /* Quantity buttons - LARGER & CLEARER */
+        .quantity-btn {
+            width: 50px !important;
+            height: 50px !important;
+            font-size: 26px !important;
+            font-weight: 900 !important;
+            border: 3px solid var(--border) !important;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .quantity-btn:hover {
+            border-color: #2563eb !important;
+            color: #2563eb !important;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+            transform: scale(1.15) !important;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3) !important;
+        }
+        
+        .quantity-btn:active {
+            transform: scale(0.95) !important;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+        }
+        
+        /* Quantity input - LARGER */
+        .quantity-input {
+            width: 80px !important;
+            font-size: 22px !important;
+            font-weight: 800 !important;
+            padding: 14px !important;
+            border: 3px solid var(--border) !important;
+            border-radius: 12px !important;
+            text-align: center !important;
+            background: #f8fafc !important;
+        }
+        
+        /* Remove button - LARGER & MORE VISIBLE */
+        .remove-btn {
+            font-size: 18px !important;
+            font-weight: 800 !important;
+            padding: 16px 32px !important;
+            border: 3px solid #fecaca !important;
+            background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%) !important;
+            color: #dc2626 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15) !important;
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+        }
+        
+        .remove-btn:hover {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+            border-color: #dc2626 !important;
+            transform: scale(1.08) !important;
+            box-shadow: 0 8px 24px rgba(220, 38, 38, 0.3) !important;
+        }
+        
+        .remove-btn:active {
+            transform: scale(0.95) !important;
+        }
+        
+        /* Checkout button - HUGE & PROMINENT */
+        .btn-primary.full-width {
+            padding: 24px 32px !important;
+            font-size: 20px !important;
+            font-weight: 900 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+            border: none !important;
+            border-radius: 16px !important;
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.45) !important;
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        
+        .btn-primary.full-width::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            width: 0 !important;
+            height: 0 !important;
+            border-radius: 50% !important;
+            background: rgba(255, 255, 255, 0.3) !important;
+            transform: translate(-50%, -50%) !important;
+            transition: width 0.6s, height 0.6s !important;
+        }
+        
+        .btn-primary.full-width:hover::before {
+            width: 500px !important;
+            height: 500px !important;
+        }
+        
+        .btn-primary.full-width:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+            transform: translateY(-4px) scale(1.02) !important;
+            box-shadow: 0 15px 40px rgba(37, 99, 235, 0.55) !important;
+        }
+        
+        .btn-primary.full-width:active {
+            transform: translateY(-1px) scale(0.98) !important;
+        }
+        
+        /* Continue shopping button - LARGER */
+        .btn-outline.full-width {
+            padding: 18px 28px !important;
+            font-size: 17px !important;
+            font-weight: 800 !important;
+            border: 3px solid var(--border) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+        }
+        
+        .btn-outline.full-width:hover {
+            border-color: #2563eb !important;
+            color: #2563eb !important;
+            background: #eff6ff !important;
+            transform: translateY(-3px) !important;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25) !important;
+        }
+        
+        /* Price text - LARGER & BOLDER */
+        .item-price {
+            font-size: 32px !important;
+            font-weight: 900 !important;
+            color: #2563eb !important;
+            letter-spacing: -1px !important;
+        }
+        
+        /* Total price - HUGE */
+        .summary-row.total strong {
+            font-size: 42px !important;
+            font-weight: 900 !important;
+            color: #2563eb !important;
+            letter-spacing: -1.5px !important;
+        }
+        
+        /* Summary title - LARGER */
+        .summary-card h2 {
+            font-size: 32px !important;
+            font-weight: 900 !important;
+            letter-spacing: -0.5px !important;
+        }
+        
+        /* Item name - LARGER */
+        .item-details h3 {
+            font-size: 24px !important;
+            font-weight: 800 !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+    <div class="container nav">
+        <a href="index.html" class="logo">
+            <span class="logo-mark">O</span>
+            <span class="logo-text">O'Future</span>
+        </a>
+        <nav class="menu">
+            <a href="index.html">Home</a>
+            <a href="product.html">Products</a>
+            <a href="cart.html">Cart</a>
+            <a href="orders.html">Orders</a>
+            <a href="profile-management.html">Account</a>
+        </nav>
+        <div class="nav-actions">
+            <a href="login.html" class="btn btn-outline">Login</a>
+        </div>
+    </div>
+</header>
+
+<main class="section">
+    <div class="container">
+        <div class="page-header">
+            <h1>Your Cart</h1>
+            <p>Manage products before checkout</p>
+        </div>
+
+        <div class="cart-grid">
+            <div class="cart-items">
+                <div id="cartList">
+                    <p class="loading">Loading cart...</p>
+                </div>
+            </div>
+
+            <div class="cart-summary">
+                <div class="summary-card">
+                    <h2>Order Summary</h2>
+                    
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <strong id="subtotal"></strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Phí nền tảng (2.5%)</span>
+                        <strong id="platformFee"></strong>   <!-- FIX: was id="shipping" -->
+                    </div>
+
+                    <div class="summary-divider"></div>
+
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <strong id="total"></strong>
+                    </div>
+
+                    <button onclick="proceedToCheckout()" class="btn btn-primary full-width">
+                        Proceed to Checkout
+                    </button>
+
+                    <a href="product.html" class="btn btn-outline full-width">
+                        Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="api.js"></script>
+    <script src="cart.js"></script>
+</body>
+</html>

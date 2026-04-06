@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Register</title>
+	<link rel="stylesheet" href="register.css">
+	<style>
+		:root{box-sizing:border-box}
+		*,*::before,*::after{box-sizing:inherit}
+		:root{font-size:16px}
+		html,body{height:100%;margin:0;padding:0;line-height:1.6}
+	</style>
+</head>
+<body>
+	<iframe class="header-embed" src="header.html" title="Site Header" loading="eager"></iframe>
+
+	<main class="main-container">
+		<section class="logo-panel" aria-label="Logo O'Future">
+			<img src="Logo.png" alt="O'Future logo" class="logo-image">
+		</section>
+
+		<section class="register-box" aria-label="Dang ky">
+			<div class="register-title">REGISTER</div>
+			<form id="registerForm">
+				<!-- Full Name -->
+				<div class="input-group">
+					<input 
+						type="text" 
+						id="fullName"
+						name="fullName"
+						placeholder="Full Name" 
+						autocomplete="name"
+						required
+					>
+				</div>
+
+				<!-- Email -->
+				<div class="input-group">
+					<input 
+						type="email" 
+						id="email"
+						name="email"
+						placeholder="Email" 
+						autocomplete="email"
+						required
+					>
+				</div>
+
+				<!-- Username -->
+				<div class="input-group">
+					<input 
+						type="text" 
+						id="username"
+						name="username"
+						placeholder="Username" 
+						autocomplete="username"
+						required
+					>
+				</div>
+
+				<!-- Phone Number (Optional) -->
+				<div class="input-group">
+					<input 
+						type="tel" 
+						id="phone"
+						name="phone"
+						placeholder="Phone Number (optional)" 
+						autocomplete="tel"
+					>
+				</div>
+
+				<!-- Role Selection -->
+				<div class="input-group">
+					<label for="role" class="label-text">Select Role:</label>
+					<select id="role" name="role" required>
+						<option value="buyer" selected>Buyer</option>
+						<option value="seller">Seller</option>
+					</select>
+				</div>
+
+				<!-- Password with Validation Feedback -->
+				<div class="input-group">
+					<input 
+						type="password" 
+						id="password"
+						name="password"
+						placeholder="Password" 
+						autocomplete="new-password"
+						required
+					>
+					<div class="password-requirements" id="passwordRequirements">
+						<div class="requirement" id="req-length">
+							<span class="requirement-icon">✓</span> At least 8 characters
+						</div>
+						<div class="requirement" id="req-uppercase">
+							<span class="requirement-icon">✓</span> At least 1 uppercase letter
+						</div>
+						<div class="requirement" id="req-lowercase">
+							<span class="requirement-icon">✓</span> At least 1 lowercase letter
+						</div>
+						<div class="requirement" id="req-number">
+							<span class="requirement-icon">✓</span> At least 1 number
+						</div>
+						<div class="requirement" id="req-special">
+							<span class="requirement-icon">✓</span> At least 1 special character
+						</div>
+					</div>
+				</div>
+
+				<!-- Confirm Password -->
+				<div class="input-group">
+					<input 
+						type="password" 
+						id="confirmPassword"
+						name="confirmPassword"
+						placeholder="Confirm Password" 
+						autocomplete="new-password"
+						required
+					>
+					<span class="password-match-status" id="confirmStatus"></span>
+				</div>
+
+				<button 
+					type="submit" 
+					id="submitBtn"
+					class="submit-btn"
+					disabled
+				>Dang ky</button>
+				<p class="switch-auth">Da co tai khoan? <a href="login.html">Dang nhap</a></p>
+			</form>
+		</section>
+	</main>
+
+	<iframe class="footer-embed" src="footer.html" title="Site Footer" loading="eager"></iframe>
+  <script src="api.js"></script>
+	<script src="register.js"></script>
+</body>
+</html>

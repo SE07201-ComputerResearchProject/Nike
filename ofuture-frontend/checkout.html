@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán - O'Future</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="checkout.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container nav">
+            <a href="index.html" class="logo">
+                <span class="logo-mark">O</span>
+                <span class="logo-text">O'Future</span>
+            </a>
+            <nav class="menu">
+                <a href="index.html">Trang chủ</a>
+                <a href="product.html">Sản phẩm</a>
+                <a href="cart.html">Giỏ hàng</a>
+                <a href="orders.html">Đơn hàng</a>
+                <a href="profile-management.html">Tài khoản</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="section">
+        <div class="container">
+            <div class="page-header">
+                <h1>Thanh toán</h1>
+                <p>Hoàn tất đơn hàng của bạn</p>
+            </div>
+
+            <div class="checkout-grid">
+                <div class="checkout-form">
+                    <div class="section-card">
+                        <h2>Thông tin giao hàng</h2>
+                        <form id="checkoutForm">
+                            <div class="form-group">
+                                <label>Họ và tên *</label>
+                                <input type="text" id="fullName" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Số điện thoại *</label>
+                                <input type="tel" id="phone" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Địa chỉ giao hàng *</label>
+                                <input type="text" id="address" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Thành phố *</label>
+                                <input type="text" id="city" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Ghi chú đơn hàng</label>
+                                <textarea id="notes" rows="3"></textarea>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="section-card">
+                        <h2>Phương thức thanh toán</h2>
+                        <div class="payment-methods">
+                            <label class="payment-option">
+                                <input type="radio" name="payment" value="cod" checked>
+                                <div class="option-content">
+                                    <span class="option-icon">💵</span>
+                                    <div>
+                                        <strong>Thanh toán khi nhận hàng (COD)</strong>
+                                        <p>Thanh toán bằng tiền mặt khi nhận hàng</p>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="payment-option">
+                                <input type="radio" name="payment" value="momo">
+                                <div class="option-content">
+                                    <span class="option-icon">📱</span>
+                                    <div>
+                                        <strong>Ví MoMo</strong>
+                                        <p>Thanh toán qua ví điện tử MoMo</p>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="payment-option">
+                                <input type="radio" name="payment" value="qr">
+                                <div class="option-content">
+                                    <span class="option-icon">📷</span>
+                                    <div>
+                                        <strong>Quét mã QR</strong>
+                                        <p>Thanh toán bằng cách quét mã QR</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="order-summary">
+                    <div class="summary-card">
+                        <h2>Đơn hàng của bạn</h2>
+                        
+                        <div id="orderItems">
+                            <p class="loading">Đang tải...</p>
+                        </div>
+
+                        <div class="summary-divider"></div>
+
+                        <div class="summary-row">
+                            <span>Tạm tính</span>
+                            <strong id="subtotal">0 VNĐ</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Phí vận chuyển</span>
+                            <strong id="shipping">30,000 VNĐ</strong>
+                        </div>
+
+                        <div class="summary-divider"></div>
+
+                        <div class="summary-row total">
+                            <span>Tổng cộng</span>
+                            <strong id="total">0 VNĐ</strong>
+                        </div>
+
+                        <button onclick="placeOrder()" class="btn btn-primary full-width">
+                            Đặt hàng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="api.js"></script>
+    <script src="checkout.js"></script>
+</body>
+</html>

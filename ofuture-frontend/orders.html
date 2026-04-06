@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đơn hàng - O'Future</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="orders.css">
+</head>
+<body>
+   <header class="header">
+    <div class="container nav">
+        <a href="index.html" class="logo">
+            <span class="logo-mark">O</span>
+            <span class="logo-text">O'Future</span>
+        </a>
+        <nav class="menu">
+            <a href="index.html">Home</a>
+            <a href="product.html">Products</a>
+            <a href="cart.html">Cart</a>
+            <a href="orders.html">Orders</a>
+            <a href="profile-management.html">Account</a>
+        </nav>
+        <div class="nav-actions">
+            <button id="logoutBtn" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+</header>
+
+<main class="section">
+    <div class="container">
+        <div class="page-header">
+            <h1>My Orders</h1>
+            <p>Track and manage your orders</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-status="all">All</button>
+            <button class="tab-btn" data-status="pending">Pending</button>
+            <button class="tab-btn" data-status="paid">Paid</button>
+            <button class="tab-btn" data-status="shipped">Shipping</button>
+            <button class="tab-btn" data-status="completed">Completed</button>
+            <button class="tab-btn" data-status="cancelled">Cancelled</button>
+        </div>
+
+        <div id="ordersList">
+            <p class="loading">Loading orders...</p>
+        </div>
+    </div>
+</main>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+<!-- Order Detail Modal -->
+<div id="orderModal" class="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;position:relative;">
+    <button onclick="closeOrderModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:24px;cursor:pointer;">×</button>
+    <div id="orderDetail"></div>
+  </div>
+</div>
+
+<!-- Dispute Modal -->
+<div id="disputeModal" class="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;max-width:500px;width:90%;">
+    <h2 style="margin-bottom:16px;">Gửi Khiếu Nại</h2>
+    <form id="disputeForm">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-weight:600;margin-bottom:8px;">Lý do khiếu nại *</label>
+        <textarea id="disputeReason" rows="4" required
+          placeholder="Mô tả vấn đề với đơn hàng (ít nhất 10 ký tự)..."
+          style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;"></textarea>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button type="button" onclick="closeDisputeModal()"
+          style="padding:10px 20px;background:#f1f5f9;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Hủy</button>
+        <button type="submit"
+          style="padding:10px 20px;background:#ef4444;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Gửi Khiếu Nại</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+    <script src="api.js"></script>
+    <script src="orders.js"></script>
+    <!-- Also add the modal display fix (display:flex when shown) -->
+    <style>.modal.show { display: flex !important; }</style>
+</body>
+</html>

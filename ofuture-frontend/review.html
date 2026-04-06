@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đánh giá - O'Future</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="review.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+        <a href="index.html" class="logo">
+            <span class="logo-mark">O</span>
+            <span class="logo-text">O'Future</span>
+        </a>
+        <nav class="menu">
+            <a href="index.html">Home</a>
+            <a href="product.html">Products</a>
+            <a href="cart.html">Cart</a>
+            <a href="orders.html">Orders</a>
+            <a href="profile-management.html">Account</a>
+        </nav>
+        <div class="nav-actions">
+            <button id="logoutBtn" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+</header>
+
+<main class="section">
+    <div class="container">
+        <div class="page-header">
+            <h1>Product Reviews</h1>
+            <p>Share your experience</p>
+        </div>
+
+        <div class="review-grid">
+            <div class="review-form-section">
+                <div class="section-card">
+                    <h2>Write a Review</h2>
+                    
+                    <form id="reviewForm">
+                        <div class="form-group">
+                            <label>Select a completed order</label>
+                            <select id="orderId" required>
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Rating *</label>
+                            <div class="star-rating">
+                                <span class="star" data-rating="1">★</span>
+                                <span class="star" data-rating="2">★</span>
+                                <span class="star" data-rating="3">★</span>
+                                <span class="star" data-rating="4">★</span>
+                                <span class="star" data-rating="5">★</span>
+                            </div>
+                            <input type="hidden" id="rating" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Title *</label>
+                            <input type="text" id="title" required placeholder="Summarize your review">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Content *</label>
+                            <textarea id="content" rows="5" required placeholder="Share details about your experience"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Submit Review</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="reviews-list-section">
+                <div class="section-card">
+                    <h2>My Reviews</h2>
+                    <div id="reviewsList">
+                        <p class="loading">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+    <div id="toast" class="toast"></div>
+    <script src="api.js"></script>
+    <script src="review.js"></script>
+</body>
+</html>

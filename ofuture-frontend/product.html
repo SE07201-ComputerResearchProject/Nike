@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sản phẩm - O'Future</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .product-section {
+            padding: 40px 0 80px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .page-header h1 {
+            font-size: 42px;
+            margin-bottom: 12px;
+            letter-spacing: -0.03em;
+        }
+
+        .page-header p {
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        .search-bar {
+            max-width: 600px;
+            margin: 0 auto 32px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 16px 50px 16px 20px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 15px;
+            transition: all 0.25s ease;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: var(--muted);
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .category-tab {
+            padding: 12px 28px;
+            border: 2px solid var(--border);
+            background: var(--white);
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-tab::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: var(--accent-soft);
+            transform: translate(-50%, -50%);
+            transition: width 0.4s, height 0.4s;
+        }
+
+        .category-tab:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .category-tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.15);
+        }
+
+        .category-tab.active {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: var(--white);
+            border-color: var(--accent);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .category-tab.active::before {
+            display: none;
+        }
+
+        .category-tab span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .product-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 20px;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow);
+            border-color: var(--accent);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+            border-radius: 14px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            display: block;
+        }
+
+        .product-image[src=""],
+        .product-image:not([src]) {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            position: relative;
+        }
+
+        .product-image[src=""]::after,
+        .product-image:not([src])::after {
+            content: "📦";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 64px;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: #dc2626;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .product-info {
+            padding: 0 4px;
+        }
+
+        .product-category {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .product-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            min-height: 48px;
+            line-height: 1.4;
+        }
+
+        .product-price {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-add-cart {
+            flex: 1;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-add-cart::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-add-cart:hover::before {
+            left: 100%;
+        }
+
+        .btn-add-cart:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-add-cart:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-quick-view {
+            padding: 14px 18px;
+            background: var(--white);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-quick-view:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--soft-bg);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-quick-view:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        .cart-badge {
+            position: relative;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc2626;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 28px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--white);
+            border: 2px solid var(--border);
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-weight: 300;
+            color: var(--muted);
+        }
+
+        .modal-close:hover {
+            background: #fee2e2;
+            border-color: #dc2626;
+            color: #dc2626;
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.3);
+        }
+
+        .modal-close:active {
+            transform: rotate(90deg) scale(0.95);
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 40px;
+        }
+
+        .modal-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 20px;
+        }
+
+        .modal-info h2 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .modal-category {
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .modal-price {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 24px;
+        }
+
+        .modal-description {
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .quantity-selector {
+            margin-bottom: 24px;
+        }
+
+        .quantity-selector label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .qty-btn {
+            width: 44px;
+            height: 44px;
+            border: 2px solid var(--border);
+            background: var(--white);
+            border-radius: 10px;
+            font-size: 22px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qty-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--soft-bg);
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .qty-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 1px 4px rgba(37, 99, 235, 0.2);
+        }
+
+        .qty-display {
+            font-size: 20px;
+            font-weight: 700;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .size-selector {
+            margin-bottom: 24px;
+        }
+
+        .size-selector label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .size-options {
+            display: flex;
+            gap: 12px;
+        }
+
+        .size-option {
+            padding: 12px 24px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 700;
+            font-size: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .size-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--accent-soft);
+            transition: left 0.3s;
+        }
+
+        .size-option:hover::before {
+            left: 0;
+        }
+
+        .size-option:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        }
+
+        .size-option.active {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: var(--white);
+            border-color: var(--accent);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        .size-option.active::before {
+            display: none;
+        }
+
+        .size-option span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .modal-add-cart {
+            width: 100%;
+            padding: 18px 24px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: var(--white);
+            border: none;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-add-cart::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .modal-add-cart:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .modal-add-cart:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(37, 99, 235, 0.45);
+        }
+
+        .modal-add-cart:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 16px;
+            }
+
+            .product-card {
+                padding: 12px;
+            }
+
+            .product-image {
+                height: 180px;
+            }
+
+            .modal-body {
+                grid-template-columns: 1fr;
+                padding: 24px;
+            }
+
+            .modal-image {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+    <div class="container nav">
+        <a href="index.html" class="logo">
+            <span class="logo-mark">O</span>
+            <span class="logo-text">O'Future</span>
+        </a>
+        <nav class="menu">
+            <a href="index.html">Home</a>
+            <a href="product.html">Products</a>
+            <a href="cart.html">Cart</a>
+            <a href="orders.html">Orders</a>
+            <a href="profile-management.html">Account</a>
+        </nav>
+        <div class="nav-actions">
+            <a href="cart.html" class="btn btn-outline cart-badge">
+                🛒 Cart
+                <span class="cart-count" id="cartCount">0</span>
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="product-section">
+    <div class="container">
+        <div class="page-header">
+            <h1>Explore Products</h1>
+            <p>Search and shop for high-quality products</p>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search products...">
+            <span class="search-icon">🔍</span>
+        </div>
+
+        <div class="category-tabs">
+            <button class="category-tab active" data-category="ALL">All</button>
+            <button class="category-tab" data-category="SHIRT">Shirts</button>
+            <button class="category-tab" data-category="CLOCK">Watches</button>
+            <button class="category-tab" data-category="PERFUME">Perfume</button>
+            <button class="category-tab" data-category="HAND">Handbags</button>
+            <button class="category-tab" data-category="FASHION">Fashion</button>
+            <button class="category-tab" data-category="HATS">Hats</button>
+        </div>
+
+        <div class="product-grid" id="productList"></div>
+    </div>
+</main>
+
+<!-- Product Detail Modal -->
+<div class="modal" id="productModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <div class="modal-body">
+            <div>
+                <img id="modalImage" class="modal-image" alt="">
+            </div>
+            <div class="modal-info">
+                <div class="modal-category" id="modalCategory"></div>
+                <h2 id="modalName"></h2>
+                <div class="modal-price" id="modalPrice"></div>
+                <p class="modal-description" id="modalDescription"></p>
+
+                <div class="size-selector">
+                    <label>Size:</label>
+                    <div class="size-options">
+                        <div class="size-option active" data-size="S">S</div>
+                        <div class="size-option" data-size="M">M</div>
+                        <div class="size-option" data-size="L">L</div>
+                        <div class="size-option" data-size="XL">XL</div>
+                    </div>
+                </div>
+
+                <div class="quantity-selector">
+                    <label>Quantity:</label>
+                    <div class="quantity-controls">
+                        <button class="qty-btn" onclick="changeQuantity(-1)">−</button>
+                        <span class="qty-display" id="modalQuantity">1</span>
+                        <button class="qty-btn" onclick="changeQuantity(1)">+</button>
+                    </div>
+                </div>
+
+                <button class="modal-add-cart" onclick="addModalToCart()">
+                    Add to Cart
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script src="api.js"></script>
+    <script>
+        // Khai báo mảng rỗng, sẽ được đổ data từ API
+        let products = [];
+        
+        let currentCategory = "ALL";
+        let searchQuery = "";
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        let selectedProduct = null;
+        let modalQuantity = 1;
+        let selectedSize = "S";
+
+        // ==========================================
+        // TÍCH HỢP GỌI API BACKEND
+        // ==========================================
+        async function loadProductsFromAPI() {
+            const list = document.getElementById('productList');
+            list.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--muted);">Đang tải sản phẩm...</div>`;
+            
+            try {
+                // Gọi API lấy toàn bộ sản phẩm đang active trên hệ thống
+                // Phân trang 100 sản phẩm (có thể nâng lên nếu cần)
+                const response = await fetchAPI('/products?limit=100');
+                
+                // Chuẩn hóa dữ liệu từ Backend (formatProductSummary) sang định dạng của Frontend
+                products = response.data.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    price: p.price,
+                    cat: p.category || 'FASHION', // Nếu không có category thì mặc định
+                    img: (p.imageUrls && p.imageUrls.length > 0) ? `http://localhost:5000${p.imageUrls[0]}` : '', 
+                    desc: p.description || 'Chưa có mô tả'
+                }));
+
+                // Render lại giao diện sau khi có data
+                renderProducts();
+            } catch (error) {
+                console.error("Lỗi tải sản phẩm:", error);
+                list.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <h3 style="color: var(--danger)">Lỗi kết nối máy chủ</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // ==========================================
+        // CÁC HÀM XỬ LÝ GIAO DIỆN HIỆN TẠI
+        // ==========================================
+        function renderProducts() {
+            const list = document.getElementById('productList');
+            list.innerHTML = '';
+
+            let filtered = products.filter(p => {
+                const matchCategory = currentCategory === "ALL" || p.cat.toUpperCase() === currentCategory;
+                const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchCategory && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <h3>Không tìm thấy sản phẩm</h3>
+                        <p>Thử tìm kiếm với từ khóa khác hoặc chọn danh mục khác</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach((p, index) => {
+                const isHot = index < 3;
+                list.innerHTML += `
+                    <div class="product-card">
+                        ${isHot ? '<div class="product-badge">HOT</div>' : ''}
+                        <img src="${p.img}" alt="${p.name}" class="product-image" onclick="openModal('${p.id}')">
+                        <div class="product-info">
+                            <div class="product-category">${getCategoryName(p.cat)}</div>
+                            <h3 class="product-name">${p.name}</h3>
+                            <div class="product-price">${p.price.toLocaleString('vi-VN')} VNĐ</div>
+                            <div class="product-actions">
+                                <button class="btn-add-cart" onclick="quickAddToCart('${p.id}')">
+                                    Thêm vào giỏ
+                                </button>
+                                <button class="btn-quick-view" onclick="openModal('${p.id}')">
+                                    👁️
+                                </button>
+                                <button class="btn-quick-view" onclick="window.location.href='product-detail.html?id=${p.id}'" style="border-color:var(--accent); color:var(--accent)">
+                                    Chi tiết
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function getCategoryName(cat) {
+            const names = {
+                'SHIRT': 'Áo sơ mi',
+                'CLOCK': 'Đồng hồ',
+                'PERFUME': 'Nước hoa',
+                'HAND': 'Túi xách',
+                'FASHION': 'Thời trang',
+                'HATS': 'Mũ',
+                'ACCESSORIES': 'Phụ kiện'
+            };
+            // Nếu không có trong dict, trả về tên gốc (viết hoa chữ cái đầu)
+            return names[cat.toUpperCase()] || (cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase());
+        }
+
+        async function openModal(id) {
+            try {
+                // Gọi API lấy chi tiết 1 sản phẩm để hiển thị trên Modal
+                const response = await fetchAPI(`/products/${id}`);
+                const pInfo = response.data;
+
+                selectedProduct = {
+                    id: pInfo.id,
+                    name: pInfo.name,
+                    price: pInfo.price,
+                    cat: pInfo.category,
+                    img: (pInfo.imageUrls && pInfo.imageUrls.length > 0) ? `http://localhost:5000${pInfo.imageUrls[0]}` : '',
+                    desc: pInfo.description
+                };
+
+                modalQuantity = 1;
+                selectedSize = "S";
+
+                document.getElementById('modalImage').src = selectedProduct.img;
+                document.getElementById('modalCategory').textContent = getCategoryName(selectedProduct.cat);
+                document.getElementById('modalName').textContent = selectedProduct.name;
+                document.getElementById('modalPrice').textContent = selectedProduct.price.toLocaleString('vi-VN') + ' VNĐ';
+                document.getElementById('modalDescription').textContent = selectedProduct.desc || 'Chưa có mô tả';
+                document.getElementById('modalQuantity').textContent = modalQuantity;
+
+                // Reset size selection
+                document.querySelectorAll('.size-option').forEach(opt => {
+                    opt.classList.remove('active');
+                    if (opt.dataset.size === 'S') opt.classList.add('active');
+                });
+
+                document.getElementById('productModal').classList.add('show');
+            } catch (error) {
+                alert("Lỗi khi lấy thông tin sản phẩm: " + error.message);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').classList.remove('show');
+        }
+
+        function changeQuantity(delta) {
+            modalQuantity = Math.max(1, modalQuantity + delta);
+            document.getElementById('modalQuantity').textContent = modalQuantity;
+        }
+
+        async function quickAddToCart(id) {
+            // Thay vì dùng hàm đồng bộ cũ, ta bắt buộc phải tìm sản phẩm từ mảng data đang có
+            const product = products.find(p => p.id === id);
+            if (!product) return alert("Sản phẩm không hợp lệ");
+            addToCartLogic(product, 1, 'M');
+            alert('✓ Đã thêm vào giỏ hàng!');
+        }
+
+        function addModalToCart() {
+            if (!selectedProduct) return;
+            addToCartLogic(selectedProduct, modalQuantity, selectedSize);
+            closeModal();
+            alert('✓ Đã thêm vào giỏ hàng!');
+        }
+
+        function addToCartLogic(product, quantity, size) {
+            const existIndex = cart.findIndex(i => i.id === product.id && i.size === size);
+
+            if (existIndex >= 0) {
+                cart[existIndex].quantity += quantity;
+            } else {
+                cart.push({
+                    ...product,
+                    quantity: quantity,
+                    size: size
+                });
+            }
+
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCount();
+        }
+
+        function updateCartCount() {
+            const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('cartCount').textContent = count;
+        }
+
+        // Category tabs
+        document.querySelectorAll('.category-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                currentCategory = this.dataset.category.toUpperCase();
+                renderProducts();
+            });
+        });
+
+        // Search
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            searchQuery = e.target.value;
+            renderProducts();
+        });
+
+        // Size selection
+        document.querySelectorAll('.size-option').forEach(opt => {
+            opt.addEventListener('click', function() {
+                document.querySelectorAll('.size-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+                selectedSize = this.dataset.size;
+            });
+        });
+
+        // Close modal on outside click
+        document.getElementById('productModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // ==========================================
+        // INITIALIZE (Gọi API ngay khi mở trang)
+        // ==========================================
+        loadProductsFromAPI();
+        updateCartCount();
+    </script>
+    <script src="chat-widget.js"></script>
+</body>
+</html>

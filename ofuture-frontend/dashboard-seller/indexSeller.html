@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O'Future - Seller Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>O'Future</h1>
+                <p>Seller Dashboard</p>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="#" class="menu-item active" data-section="dashboard">
+                    📊 Dashboard
+                </a>
+                <a href="#" class="menu-item" data-section="products">
+                    📦 Products
+                </a>
+                <a href="#" class="menu-item" data-section="orders">
+                    🛒 Orders
+                </a>
+                <a href="#" class="menu-item" data-section="escrow">
+                    💰 Escrow
+                </a>
+                <a href="#" class="menu-item" data-section="disputes">
+                    ⚖️ Disputes
+                </a>
+                <a href="#" class="menu-item" data-section="samples">
+                    🎁 Samples
+                </a>
+                <a href="#" class="menu-item" data-section="reviews">
+                    ⭐ Reviews
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Topbar -->
+            <div class="topbar">
+                <h2 id="pageTitle">Dashboard</h2>
+                <div class="user-info">
+                    <span id="username">User</span>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Dashboard Section -->
+                <section id="dashboard-section" class="section active">
+                    <h2>Welcome to Seller Dashboard</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Products</h3>
+                            <p id="totalProducts">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Orders</h3>
+                            <p id="totalOrders">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Escrow Balance</h3>
+                            <p id="totalEscrow">$0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Average Rating</h3>
+                            <p id="avgRating">0 ⭐</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Products Section -->
+                <section id="products-section" class="section">
+                    <div class="section-header">
+                        <h2>Products</h2>
+                        <button id="addProductBtn" class="btn btn-primary">+ Add Product</button>
+                    </div>
+
+                    <!-- Add Product Form -->
+                    <div id="addProductForm" class="form-modal" style="display: none;">
+                        <div class="form-content">
+                                <h3 id="productFormTitle">Add New Product</h3>
+                                <form id="productForm">
+                                <input type="hidden" id="editingProductId" value="">
+                                <div class="form-group">
+                                    <label>Product Name</label>
+                                    <input type="text" id="productName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <textarea id="productDesc"></textarea>
+                                </div>
+                                    <div class="form-group">
+                                        <label>Category</label>
+                                        <select id="productCategory">
+                                            <option value="default">General</option>
+                                            <option value="clothing">Clothing</option>
+                                            <option value="accessories">Accessories</option>
+                                            <option value="electronics">Electronics</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Images</label>
+                                        <input type="file" id="productImages" multiple accept="image/*">
+                                    </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Price</label>
+                                        <input type="number" id="productPrice" step="0.01" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Stock</label>
+                                        <input type="number" id="productStock" required>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">Save Product</button>
+                                    <button type="button" class="btn btn-secondary" onclick="closeProductForm()">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Products Table -->
+                    <div class="table-container">
+                        <div class="table-controls">
+                            <input id="productSearch" class="search-input" placeholder="Search products..." />
+                        </div>
+                        <table id="productsTable">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Disputes Section -->
+                <section id="disputes-section" class="section">
+                    <h2>Disputes</h2>
+                    <div class="table-container">
+                        <table id="disputesTable">
+                            <thead>
+                                <tr>
+                                    <th>Dispute ID</th>
+                                    <th>Order</th>
+                                    <th>Buyer</th>
+                                    <th>Issue</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="disputesTableBody">
+                                <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Samples Section -->
+                <section id="samples-section" class="section">
+                    <h2>Samples</h2>
+                    <div class="table-container">
+                        <table id="samplesTable">
+                            <thead>
+                                <tr>
+                                    <th>Sample ID</th>
+                                    <th>Product</th>
+                                    <th>Requestor</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="samplesTableBody">
+                                <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Orders Section -->
+                <section id="orders-section" class="section">
+                    <h2>Orders</h2>
+                    <div class="table-container">
+                        <table id="ordersTable">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Buyer</th>
+                                    <th>Product</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody">
+                                <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Escrow Section -->
+                <section id="escrow-section" class="section">
+                    <h2>Escrow Tracking</h2>
+                    <div class="escrow-summary">
+                        <div class="escrow-card">
+                            <h3>Total Held</h3>
+                            <p id="totalHeld">$0</p>
+                        </div>
+                        <div class="escrow-card">
+                            <h3>Total Released</h3>
+                            <p id="totalReleased">$0</p>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="escrowTable">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Amount</th>
+                                    <th>Platform Fee</th>
+                                    <th>Net Amount</th>
+                                    <th>Status</th>
+                                    <th>Release Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="escrowTableBody">
+                                <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Reviews Section -->
+                <section id="reviews-section" class="section">
+                    <h2>Reviews</h2>
+                    <div class="reviews-container" id="reviewsContainer">
+                        <p class="text-center">Loading...</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="../api.js"></script>
+    <script src="script.js"></script>
+    <div id="globalSpinner"><div class="spinner"></div></div>
+</body>
+</html>
