@@ -1,0 +1,344 @@
+// dashboard-seller/seller-wallet/script.js
+
+let currentPage = 1;
+const pageSize = 10;
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadWalletBalance();
+  await loadTransactions();
+  setupEventListeners();
+});
+
+// Setup event listeners
+function setupEventListeners() {
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+  document.getElementById('typeFilter').addEventListener('change', () => {
+    currentPage = 1;
+    loadTransactions();
+  });
+  document.getElementById('withdrawForm').addEventListener('submit', handleWithdraw);
+}
+
+// Load wallet balance
+async function loadWalletBalance() {
+  try {
+    const response = await fetch('/api/wallet/balance', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to load wallet balance');
+
+    const data = await response.json();
+    if (data.success) {
+      document.getElementById('walletBalance').textContent = data.data.formattedBalance;
+      // Update stats (calculate from transactions)
+      loadStats();
+    }
+  } catch (error) {
+    console.error('Error loading wallet balance:', error);
+    showToast('Lỗi khi tải số dư ví', 'error');
+  }
+}
+
+// Load transactions
+async function loadTransactions() {
+  try {
+    const typeFilter = document.getElementById('typeFilter').value;
+    const params = new URLSearchParams({
+      page: currentPage,
+      limit: pageSize
+    });
+
+    const response = await fetch(`/api/wallet/transactions?${params}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to load transactions');
+
+    const data = await response.json();
+    if (data.success) {
+      renderTransactions(data.data.transactions, typeFilter);
+      updatePagination(data.data.pagination);
+    }
+  } catch (error) {
+    console.error('Error loading transactions:', error);
+    showToast('Lỗi khi tải lịch sử giao dịch', 'error');
+  }
+}
+
+// Load stats
+async function loadStats() {
+  try {
+    const response = await fetch('/api/wallet/transactions?limit=1000&page=1', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to load stats');
+
+    const data = await response.json();
+    if (data.success) {
+      const txns = data.data.transactions;
+      let totalIncome = 0;
+      let totalWithdrawn = 0;
+
+      txns.forEach(txn => {
+        if (txn.type === 'transfer_in') {
+          totalIncome += parseFloat(txn.amountValue);
+        } else if (txn.type === 'withdrawal') {
+          totalWithdrawn += parseFloat(txn.amountValue);
+        }
+      });
+
+      document.getElementById('totalIncome').textContent = `${Number(totalIncome).toLocaleString('vi-VN')} đ`;
+      document.getElementById('totalWithdrawn').textContent = `${Number(totalWithdrawn).toLocaleString('vi-VN')} đ`;
+    }
+  } catch (error) {
+    console.error('Error loading stats:', error);
+  }
+}
+
+// Render transactions
+function renderTransactions(transactions, typeFilter) {
+  const container = document.getElementById('transactionsContainer');
+
+  if (!transactions || transactions.length === 0) {
+    container.innerHTML = `
+      <div class="no-transactions">
+        <p>📭 Chưa có giao dịch nào</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Filter transactions if needed
+  let filtered = transactions;
+  if (typeFilter) {
+    filtered = transactions.filter(t => t.type === typeFilter);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="no-transactions">
+        <p>📭 Không có giao dịch loại này</p>
+      </div>
+    `;
+    return;
+  }
+
+  const html = filtered.map(txn => {
+    const icon = getTransactionIcon(txn.type);
+    const sign = txn.type === 'transfer_in' ? '+' : '-';
+    const typeClass = txn.type;
+    const description = getTransactionDescription(txn);
+
+    return `
+      <div class="transaction-item" onclick="showTransactionDetail('${txn.id}')">
+        <div class="transaction-left">
+          <div class="transaction-icon ${typeClass}">${icon}</div>
+          <div class="transaction-info">
+            <h4>${getTransactionType(txn.type)}</h4>
+            <p>${description}</p>
+          </div>
+        </div>
+        <div class="transaction-right">
+          <p class="transaction-amount ${typeClass}">${sign}${txn.amount}</p>
+          <p class="transaction-date">${formatDate(txn.createdAt)}</p>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+// Get transaction icon
+function getTransactionIcon(type) {
+  const icons = {
+    'transfer_in': '📥',
+    'withdrawal': '💸',
+    'platform_fee': '🏛️',
+    'adjustment': '⚙️'
+  };
+  return icons[type] || '💱';
+}
+
+// Get transaction type label
+function getTransactionType(type) {
+  const labels = {
+    'transfer_in': 'Tiền nhận',
+    'withdrawal': 'Rút tiền',
+    'platform_fee': 'Phí nền tảng',
+    'adjustment': 'Điều chỉnh'
+  };
+  return labels[type] || type;
+}
+
+// Get transaction description
+function getTransactionDescription(txn) {
+  if (txn.description) return txn.description;
+  if (txn.referenceType) return `Liên quan đến ${txn.referenceType}`;
+  return getTransactionType(txn.type);
+}
+
+// Update pagination
+function updatePagination(pagination) {
+  const container = document.getElementById('paginationContainer');
+  const pageInfo = document.getElementById('pageInfo');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  if (pagination.totalPages <= 1) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'flex';
+  pageInfo.textContent = `Trang ${pagination.page}/${pagination.totalPages} (${pagination.total} giao dịch)`;
+
+  prevBtn.disabled = pagination.page === 1;
+  nextBtn.disabled = pagination.page === pagination.totalPages;
+}
+
+// Pagination handlers
+function previousPage() {
+  if (currentPage > 1) {
+    currentPage--;
+    loadTransactions();
+    window.scrollTo(0, 0);
+  }
+}
+
+function nextPage() {
+  currentPage++;
+  loadTransactions();
+  window.scrollTo(0, 0);
+}
+
+// Show transaction detail
+async function showTransactionDetail(transactionId) {
+  try {
+    const response = await fetch(`/api/wallet/transactions/${transactionId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to load transaction detail');
+
+    const data = await response.json();
+    if (data.success) {
+      const txn = data.data;
+      showToast(`
+        ${getTransactionType(txn.type)}: ${txn.formattedAmount}
+        ${txn.description ? '\n' + txn.description : ''}
+        Status: ${txn.status}
+      `, 'info');
+    }
+  } catch (error) {
+    console.error('Error loading transaction detail:', error);
+  }
+}
+
+// Modal functions
+function openWithdrawModal() {
+  document.getElementById('withdrawModal').classList.add('active');
+}
+
+function closeWithdrawModal() {
+  document.getElementById('withdrawModal').classList.remove('active');
+}
+
+function openStatsModal() {
+  document.getElementById('statsModal').classList.add('active');
+}
+
+function closeStatsModal() {
+  document.getElementById('statsModal').classList.remove('active');
+}
+
+// Handle withdraw
+async function handleWithdraw(e) {
+  e.preventDefault();
+
+  const amount = document.getElementById('withdrawAmount').value;
+  const bankAccount = document.getElementById('bankAccount').value;
+
+  if (!amount || amount < 100000) {
+    showToast('Số tiền tối thiểu là 100,000 đ', 'error');
+    return;
+  }
+
+  if (!bankAccount) {
+    showToast('Vui lòng chọn tài khoản ngân hàng', 'error');
+    return;
+  }
+
+  try {
+    // Call withdrawal API (to be implemented on backend)
+    showToast('Chức năng rút tiền sẽ được cập nhật sớm', 'warning');
+    closeWithdrawModal();
+  } catch (error) {
+    console.error('Error processing withdrawal:', error);
+    showToast('Lỗi khi xử lý rút tiền', 'error');
+  }
+}
+
+// Utility functions
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) {
+    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Hôm qua';
+  }
+
+  return date.toLocaleDateString('vi-VN');
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  toast.style.cssText = `
+    background: ${type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : type === 'warning' ? '#ffc107' : '#17a2b8'};
+    color: ${type === 'warning' ? '#333' : 'white'};
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    animation: slideIn 0.3s ease;
+  `;
+  container.appendChild(toast);
+
+  setTimeout(() => toast.remove(), 5000);
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  window.location.href = '/login.html';
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', (e) => {
+  const withdrawModal = document.getElementById('withdrawModal');
+  const statsModal = document.getElementById('statsModal');
+
+  if (e.target === withdrawModal) {
+    closeWithdrawModal();
+  }
+  if (e.target === statsModal) {
+    closeStatsModal();
+  }
+});

@@ -1,0 +1,171 @@
+/* Layout Sản phẩm */
+.product-container {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 40px;
+  margin-top: 20px;
+}
+
+.product-gallery img {
+  width: 100%;
+  border-radius: 12px;
+  background: #f1f5f9;
+  object-fit: contain;
+  max-height: 500px;
+}
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.seller-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  width: fit-content;
+}
+
+.seller-badge span {
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+.product-title {
+  font-size: 28px;
+  color: #0f172a;
+  margin-bottom: 16px;
+  line-height: 1.3;
+}
+
+.price-box {
+  padding: 20px;
+  background: #fff1f2;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.price {
+  font-size: 32px;
+  font-weight: 700;
+  color: #e11d48;
+}
+
+.stock-info p {
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.description {
+  margin: 24px 0;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.description h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.description p {
+  color: #475569;
+  white-space: pre-line;
+}
+
+.actions-box {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.qty-selector {
+  display: flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qty-selector button {
+  background: #f8fafc;
+  border: none;
+  padding: 10px 15px;
+  font-size: 18px;
+  cursor: pointer;
+  color: #0f172a;
+}
+
+.qty-selector input {
+  width: 60px;
+  text-align: center;
+  border: none;
+  border-left: 1px solid #cbd5e1;
+  border-right: 1px solid #cbd5e1;
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+}
+
+.btn-group {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+}
+
+.btn-group button {
+  flex: 1;
+  padding: 14px;
+  font-size: 16px;
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: white;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 { margin: 0; }
+.close { font-size: 24px; cursor: pointer; color: #64748b; }
+.modal-body { padding: 24px; }
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #f8fafc;
+}
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-family: inherit;
+}

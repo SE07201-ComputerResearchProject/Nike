@@ -58,6 +58,35 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- TABLE 2: user_profiles
+-- Lưu trữ thông tin chi tiết về doanh nghiệp/cá nhân sau bước đăng ký.
+-- Liên kết 1-1 với bảng users.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS user_profiles (
+  user_id           CHAR(36)        NOT NULL,
+  
+  -- Thông tin kinh doanh (Dùng cho cả Seller và Wholesale Buyer)
+  store_name        VARCHAR(150)    NULL,      -- Tên cửa hàng/doanh nghiệp
+  category          VARCHAR(100)    NULL,      -- Ngành hàng (Thời trang, Điện tử...)
+  scale             ENUM('small', 'medium', 'large', 'enterprise') DEFAULT 'small', -- Quy mô
+  tax_code          VARCHAR(50)     NULL,      -- Mã số thuế (nếu có)
+  
+  -- Thông tin địa chỉ chi tiết (Dành cho vận chuyển và pháp lý)
+  address           VARCHAR(255)    NULL,      -- Địa chỉ cụ thể
+  city              VARCHAR(100)    NULL,      -- Tỉnh/Thành phố
+  zip_code          VARCHAR(20)     NULL,      -- Mã bưu điện
+  country           VARCHAR(100)    DEFAULT 'Việt Nam',
+
+  -- Thông tin thêm
+  bio               TEXT            NULL,      -- Giới thiệu ngắn
+  website           VARCHAR(255)    NULL,
+  
+  PRIMARY KEY (user_id),
+  CONSTRAINT fk_profiles_users FOREIGN KEY (user_id) 
+    REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- TABLE 2: refresh_tokens
 -- Stores hashed refresh tokens for JWT rotation.
 -- One user may have multiple active sessions (e.g. mobile + desktop).
@@ -87,6 +116,31 @@ ALTER TABLE refresh_tokens
   ADD COLUMN IF NOT EXISTS revoke_reason      VARCHAR(100) NULL AFTER revoked;
 
 -- ============================================================
+-- TABLE: categories
+-- Product categories with hierarchy support
+-- ============================================================
+CREATE TABLE IF NOT EXISTS categories (
+  id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+  name            VARCHAR(100)    NOT NULL,
+  slug            VARCHAR(100)    NOT NULL,
+  description     TEXT            NULL,
+  parent_id       CHAR(36)        NULL,                          -- For category hierarchy
+  image_url       VARCHAR(500)    NULL,
+  is_active       TINYINT(1)      NOT NULL DEFAULT 1,
+  display_order   INT             NOT NULL DEFAULT 0,
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                  ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_categories_slug (slug),
+  INDEX idx_categories_parent_id (parent_id),
+  INDEX idx_categories_is_active (is_active),
+  CONSTRAINT fk_categories_parent FOREIGN KEY (parent_id)
+    REFERENCES categories (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- TABLE 3: products
 -- Products listed by sellers.
 -- stock_quantity = 0 → automatically "out_of_stock".
@@ -94,11 +148,14 @@ ALTER TABLE refresh_tokens
 CREATE TABLE IF NOT EXISTS products (
   id              CHAR(36)        NOT NULL DEFAULT (UUID()),
   seller_id       CHAR(36)        NOT NULL,
+  category_id       CHAR(36)        NULL,                        -- NEW: foreign key to categories
   name            VARCHAR(255)    NOT NULL,
   slug            VARCHAR(300)    NOT NULL,                  -- SEO-friendly URL
   description     TEXT            NULL,
   category        VARCHAR(100)    NOT NULL,
   price           DECIMAL(12, 2)  NOT NULL,
+  wholesale_price   DECIMAL(12, 2)  NULL,                        -- NEW: bulk pricing (VND)
+  minimum_quantity  INT UNSIGNED    NOT NULL DEFAULT 1,          -- NEW: min order qty
   stock_quantity  INT UNSIGNED    NOT NULL DEFAULT 0,
   image_urls      JSON            NULL,                      -- array of image URLs
   status          ENUM(
@@ -115,13 +172,43 @@ CREATE TABLE IF NOT EXISTS products (
   PRIMARY KEY (id),
   UNIQUE KEY uq_products_slug    (slug),
   INDEX idx_products_seller_id   (seller_id),
+  INDEX idx_products_category_id (category_id),
   INDEX idx_products_category    (category),
   INDEX idx_products_status      (status),
   INDEX idx_products_price       (price),
   INDEX idx_products_avg_rating  (avg_rating),
   FULLTEXT INDEX ft_products_search (name, description, category),
   CONSTRAINT fk_products_seller FOREIGN KEY (seller_id)
-    REFERENCES users (id) ON DELETE RESTRICT
+    REFERENCES users (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_products_category FOREIGN KEY (category_id)
+    REFERENCES categories (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ============================================================
+-- TABLE: product_variants
+-- Support for product variants (size, color, SKU, stock)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS product_variants (
+  id                CHAR(36)        NOT NULL DEFAULT (UUID()),
+  product_id        CHAR(36)        NOT NULL,
+  attribute_name    VARCHAR(50)     NOT NULL,                    -- e.g., 'size', 'color', 'model'
+  attribute_value   VARCHAR(100)    NOT NULL,                    -- e.g., 'M', 'Red', 'Plus'
+  sku               VARCHAR(100)    NOT NULL,                    -- Unique SKU for this variant
+  stock_quantity    INT UNSIGNED    NOT NULL DEFAULT 0,          -- Stock for this specific variant
+  price_adjustment  DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,       -- Price modifier (VND)
+  is_active         TINYINT(1)      NOT NULL DEFAULT 1,
+  created_at        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                    ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_pv_sku (sku),
+  INDEX idx_pv_product_id (product_id),
+  INDEX idx_pv_attribute (attribute_name, attribute_value),
+  INDEX idx_pv_stock (stock_quantity),
+  CONSTRAINT fk_pv_product FOREIGN KEY (product_id)
+    REFERENCES products (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -134,10 +221,13 @@ CREATE TABLE IF NOT EXISTS orders (
   id              CHAR(36)        NOT NULL DEFAULT (UUID()),
   buyer_id        CHAR(36)        NOT NULL,
   seller_id       CHAR(36)        NOT NULL,
-  product_id      CHAR(36)        NOT NULL,
-  quantity        INT UNSIGNED    NOT NULL DEFAULT 1,
-  unit_price      DECIMAL(12, 2)  NOT NULL,                  -- price snapshot at order time
-  total_amount    DECIMAL(12, 2)  NOT NULL,
+  product_id        CHAR(36)        NULL,                        -- Keep for backward compatibility (can be NULL for multi-item orders)
+  quantity          INT UNSIGNED    NOT NULL DEFAULT 1,          -- Deprecated: use order_items for new orders
+  unit_price        DECIMAL(12, 2)  NOT NULL,                    -- Deprecated: use order_items for new orders
+  total_amount      DECIMAL(12, 2)  NOT NULL,                    -- Sum of order_items subtotals
+  shipping_fee      DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,       -- Shipping cost (VND)
+  discount_amount   DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,       -- Voucher/discount (VND)
+  final_total_amount DECIMAL(12, 2) NOT NULL,                    -- total_amount + shipping_fee - discount_amount
   status          ENUM(
                     'pending',
                     'paid',
@@ -165,9 +255,62 @@ CREATE TABLE IF NOT EXISTS orders (
   CONSTRAINT fk_orders_buyer   FOREIGN KEY (buyer_id)
     REFERENCES users    (id) ON DELETE RESTRICT,
   CONSTRAINT fk_orders_seller  FOREIGN KEY (seller_id)
-    REFERENCES users    (id) ON DELETE RESTRICT,
-  CONSTRAINT fk_orders_product FOREIGN KEY (product_id)
+    REFERENCES users    (id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: order_items
+-- Support for multi-item orders
+-- Each row represents one product in an order
+-- ============================================================
+CREATE TABLE IF NOT EXISTS order_items (
+  id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+  order_id        CHAR(36)        NOT NULL,
+  product_id      CHAR(36)        NOT NULL,
+  quantity        INT UNSIGNED    NOT NULL DEFAULT 1,
+  unit_price      DECIMAL(12, 2)  NOT NULL,                  -- Price snapshot at order time (VND)
+  subtotal        DECIMAL(12, 2)  NOT NULL,                  -- quantity × unit_price (VND)
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                  ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  INDEX idx_oi_order_id (order_id),
+  INDEX idx_oi_product_id (product_id),
+  CONSTRAINT fk_oi_order FOREIGN KEY (order_id)
+    REFERENCES orders (id) ON DELETE CASCADE,
+  CONSTRAINT fk_oi_product FOREIGN KEY (product_id)
     REFERENCES products (id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: order_histories
+-- Audit trail for order status changes
+-- Track state transitions: pending → paid → shipped → completed
+-- ============================================================
+CREATE TABLE IF NOT EXISTS order_histories (
+  id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+  order_id        CHAR(36)        NOT NULL,
+  status          ENUM(
+                    'pending',
+                    'paid',
+                    'shipped',
+                    'completed',
+                    'cancelled',
+                    'refunded'
+                  )               NOT NULL,
+  reason          VARCHAR(255)    NULL,                      -- Why status changed
+  created_by      CHAR(36)        NULL,                      -- Which user made change (buyer, seller, admin, or system)
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  INDEX idx_oh_order_id (order_id),
+  INDEX idx_oh_status (status),
+  INDEX idx_oh_created_at (created_at),
+  CONSTRAINT fk_oh_order FOREIGN KEY (order_id)
+    REFERENCES orders (id) ON DELETE CASCADE,
+  CONSTRAINT fk_oh_created_by FOREIGN KEY (created_by)
+    REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -237,6 +380,9 @@ CREATE TABLE IF NOT EXISTS reviews (
   body        TEXT            NULL,
   is_verified TINYINT(1)      NOT NULL DEFAULT 1,            -- verified purchase
   is_hidden   TINYINT(1)      NOT NULL DEFAULT 0,            -- admin can hide
+  seller_reply_text TEXT       NULL,                          -- NEW: Seller response to review
+  seller_reply_at   DATETIME   NULL,                          -- NEW: When seller replied
+  is_reply_hidden   TINYINT(1) NOT NULL DEFAULT 0,            -- NEW: Admin can hide reply
   created_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
                                 ON UPDATE CURRENT_TIMESTAMP,
@@ -429,7 +575,7 @@ CREATE TABLE IF NOT EXISTS disputes (
   order_id        CHAR(36)        NOT NULL,
   complainant_id  CHAR(36)        NOT NULL,
   reason          TEXT            NOT NULL,
-  evidence_url    VARCHAR(500)    NULL,
+  evidence_urls   JSON            NULL,                          -- NEW: JSON array of URLs
   status          ENUM(
                     'pending',
                     'resolved_refunded',
@@ -437,6 +583,8 @@ CREATE TABLE IF NOT EXISTS disputes (
                     'rejected'
                   )               NOT NULL DEFAULT 'pending',
   resolved_at     DATETIME        NULL,
+  resolved_by     CHAR(36)        NULL,                          -- NEW: Admin who resolved
+  resolution_note TEXT            NULL,                          -- NEW: Admin notes
   created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
                                   ON UPDATE CURRENT_TIMESTAMP,
@@ -446,7 +594,31 @@ CREATE TABLE IF NOT EXISTS disputes (
   INDEX idx_disputes_complainant_id (complainant_id),
   INDEX idx_disputes_status         (status),
   CONSTRAINT fk_disputes_order      FOREIGN KEY (order_id)       REFERENCES orders (id) ON DELETE RESTRICT,
-  CONSTRAINT fk_disputes_complainant FOREIGN KEY (complainant_id) REFERENCES users  (id) ON DELETE RESTRICT
+  CONSTRAINT fk_disputes_complainant FOREIGN KEY (complainant_id) REFERENCES users  (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_disputes_resolved_by FOREIGN KEY (resolved_by)    REFERENCES users  (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: dispute_chats
+-- NEW: Chat messages for dispute negotiation between buyer/seller
+-- ============================================================
+CREATE TABLE IF NOT EXISTS dispute_chats (
+  id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+  dispute_id      CHAR(36)        NOT NULL,
+  sender_id       CHAR(36)        NOT NULL,                      -- buyer or seller
+  message         TEXT            NOT NULL,
+  attachments     JSON            NULL,                          -- URLs for images/files
+  is_read         TINYINT(1)      NOT NULL DEFAULT 0,
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                  ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  INDEX idx_dc_dispute_id   (dispute_id),
+  INDEX idx_dc_sender_id    (sender_id),
+  INDEX idx_dc_created_at   (created_at),
+  CONSTRAINT fk_dc_dispute  FOREIGN KEY (dispute_id) REFERENCES disputes  (id) ON DELETE CASCADE,
+  CONSTRAINT fk_dc_sender   FOREIGN KEY (sender_id)  REFERENCES users     (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3. (Optional) Table to store platform policies for RAG context
@@ -483,6 +655,91 @@ CREATE TABLE payments (
   INDEX(status)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ============================================================
+-- TABLE: wallets
+-- Stores virtual wallet balance for buyers and sellers.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS wallets (
+  id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+  user_id         CHAR(36)        NOT NULL,
+  balance         DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,  -- in VND
+  currency        VARCHAR(3)      NOT NULL DEFAULT 'VND',
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                  ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_wallet_user_id (user_id),
+  INDEX idx_wallet_user_id (user_id),
+  CONSTRAINT fk_wallet_user FOREIGN KEY (user_id)
+    REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: wallet_transactions
+-- Tracks all wallet transactions (deposits, withdrawals, transfers).
+-- ============================================================
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id                CHAR(36)        NOT NULL DEFAULT (UUID()),
+  wallet_id         CHAR(36)        NOT NULL,
+  user_id           CHAR(36)        NOT NULL,
+  type              ENUM(
+                      'deposit',          -- funds added (MoMo, QR, refund)
+                      'withdrawal',       -- funds removed (seller withdrawal)
+                      'transfer_in',      -- received from escrow release
+                      'transfer_out',     -- funds sent (order payment, etc)
+                      'platform_fee',     -- platform deduction
+                      'adjustment'        -- admin adjustment
+                    )               NOT NULL,
+  amount            DECIMAL(12, 2)  NOT NULL,
+  description       VARCHAR(255)    NULL,
+  reference_id      VARCHAR(100)    NULL,  -- order_id, escrow_id, payment_id, etc
+  reference_type    VARCHAR(50)     NULL,  -- 'order', 'escrow', 'momo_payment', etc
+  status            ENUM(
+                      'completed',
+                      'pending',
+                      'failed'
+                    )               NOT NULL DEFAULT 'completed',
+  created_at        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                    ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  INDEX idx_wt_wallet_id (wallet_id),
+  INDEX idx_wt_user_id (user_id),
+  INDEX idx_wt_type (type),
+  INDEX idx_wt_status (status),
+  INDEX idx_wt_reference (reference_type, reference_id),
+  INDEX idx_wt_created_at (created_at),
+  CONSTRAINT fk_wt_wallet FOREIGN KEY (wallet_id)
+    REFERENCES wallets (id) ON DELETE CASCADE,
+  CONSTRAINT fk_wt_user FOREIGN KEY (user_id)
+    REFERENCES users (id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE 12: notifications
+-- Stores user notifications for orders, escrow, chats, etc.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS notifications (
+  id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+  user_id         CHAR(36)        NOT NULL,
+  type            VARCHAR(50)     NOT NULL,                     -- 'order', 'escrow', 'chat', 'review', 'alert'
+  title           VARCHAR(255)    NOT NULL,
+  message         TEXT            NULL,
+  link            VARCHAR(255)    NULL,                         -- URL to relevant page
+  is_read         TINYINT(1)      NOT NULL DEFAULT 0,           -- 0 = unread, 1 = read
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                  ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  INDEX idx_user_read (user_id, is_read),
+  INDEX idx_user_created (user_id, created_at DESC),
+  CONSTRAINT fk_notif_user FOREIGN KEY (user_id)
+    REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Re-enable foreign key checks
 -- ============================================================
 SET FOREIGN_KEY_CHECKS = 1;
@@ -498,7 +755,7 @@ INSERT IGNORE INTO users (
   UUID(),
   'admin@ofuture.com',
   'admin',
-  '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/oM8bGe1Vy',
+  '$2b$12$jwjgOAebdQ5n6xyFXnotbu72QNsVUAKSMwfy9bX2UiqGKhZ/h5cX6',
   'admin',
   'System Administrator',
   1,

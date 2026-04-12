@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<title>Register</title>
+	<title>Đăng ký tài khoản | O'Future</title>
 	<link rel="stylesheet" href="register.css">
 	<style>
 		:root{box-sizing:border-box}
@@ -13,127 +13,69 @@
 	</style>
 </head>
 <body>
-	<iframe class="header-embed" src="header.html" title="Site Header" loading="eager"></iframe>
+	<!-- <div id="header-placeholder"></div> -->
 
 	<main class="main-container">
 		<section class="logo-panel" aria-label="Logo O'Future">
 			<img src="Logo.png" alt="O'Future logo" class="logo-image">
 		</section>
 
-		<section class="register-box" aria-label="Dang ky">
-			<div class="register-title">REGISTER</div>
+		<section class="register-box" aria-label="Đăng ký">
+			<div class="register-title">ĐĂNG KÝ</div>
 			<form id="registerForm">
-				<!-- Full Name -->
+				
 				<div class="input-group">
-					<input 
-						type="text" 
-						id="fullName"
-						name="fullName"
-						placeholder="Full Name" 
-						autocomplete="name"
-						required
-					>
+					<input type="text" id="fullName" name="fullName" placeholder="Họ và tên thật" autocomplete="name" required>
 				</div>
 
-				<!-- Email -->
 				<div class="input-group">
-					<input 
-						type="email" 
-						id="email"
-						name="email"
-						placeholder="Email" 
-						autocomplete="email"
-						required
-					>
+					<input type="email" id="email" name="email" placeholder="Địa chỉ Email" autocomplete="email" required>
 				</div>
 
-				<!-- Username -->
 				<div class="input-group">
-					<input 
-						type="text" 
-						id="username"
-						name="username"
-						placeholder="Username" 
-						autocomplete="username"
-						required
-					>
+					<input type="text" id="username" name="username" placeholder="Tên đăng nhập (Username)" autocomplete="username" required>
 				</div>
 
-				<!-- Phone Number (Optional) -->
 				<div class="input-group">
-					<input 
-						type="tel" 
-						id="phone"
-						name="phone"
-						placeholder="Phone Number (optional)" 
-						autocomplete="tel"
-					>
-				</div>
-
-				<!-- Role Selection -->
-				<div class="input-group">
-					<label for="role" class="label-text">Select Role:</label>
-					<select id="role" name="role" required>
-						<option value="buyer" selected>Buyer</option>
-						<option value="seller">Seller</option>
-					</select>
-				</div>
-
-				<!-- Password with Validation Feedback -->
-				<div class="input-group">
-					<input 
-						type="password" 
-						id="password"
-						name="password"
-						placeholder="Password" 
-						autocomplete="new-password"
-						required
-					>
+					<input type="password" id="password" name="password" placeholder="Mật khẩu" autocomplete="new-password" required>
 					<div class="password-requirements" id="passwordRequirements">
-						<div class="requirement" id="req-length">
-							<span class="requirement-icon">✓</span> At least 8 characters
-						</div>
-						<div class="requirement" id="req-uppercase">
-							<span class="requirement-icon">✓</span> At least 1 uppercase letter
-						</div>
-						<div class="requirement" id="req-lowercase">
-							<span class="requirement-icon">✓</span> At least 1 lowercase letter
-						</div>
-						<div class="requirement" id="req-number">
-							<span class="requirement-icon">✓</span> At least 1 number
-						</div>
-						<div class="requirement" id="req-special">
-							<span class="requirement-icon">✓</span> At least 1 special character
-						</div>
+						<div class="requirement" id="req-length"><span class="requirement-icon">○</span> Ít nhất 8 ký tự</div>
+						<div class="requirement" id="req-uppercase"><span class="requirement-icon">○</span> Có chữ in hoa</div>
+						<div class="requirement" id="req-lowercase"><span class="requirement-icon">○</span> Có chữ thường</div>
+						<div class="requirement" id="req-number"><span class="requirement-icon">○</span> Có chữ số</div>
+						<div class="requirement" id="req-special"><span class="requirement-icon">○</span> Có ký tự đặc biệt</div>
 					</div>
 				</div>
 
-				<!-- Confirm Password -->
 				<div class="input-group">
-					<input 
-						type="password" 
-						id="confirmPassword"
-						name="confirmPassword"
-						placeholder="Confirm Password" 
-						autocomplete="new-password"
-						required
-					>
+					<input type="password" id="confirmPassword" name="confirmPassword" placeholder="Xác nhận mật khẩu" autocomplete="new-password" required>
 					<span class="password-match-status" id="confirmStatus"></span>
 				</div>
 
-				<button 
-					type="submit" 
-					id="submitBtn"
-					class="submit-btn"
-					disabled
-				>Dang ky</button>
-				<p class="switch-auth">Da co tai khoan? <a href="login.html">Dang nhap</a></p>
+				
+
+				<button type="submit" id="submitBtn" class="submit-btn" disabled>Đăng ký tài khoản</button>
+				<p class="switch-auth">Đã có tài khoản? <a href="login.html">Đăng nhập ngay</a></p>
 			</form>
 		</section>
+
+		<div id="otpModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    		<div style="background: #fff; padding: 32px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+        		<h3 style="margin-top:0; font-size: 1.5rem; color: #0f172a;">Xác thực Email</h3>
+        		<p style="color: #64748b; font-size: 0.95rem; margin-bottom: 24px;">Hệ thống đã gửi mã OTP gồm 6 chữ số đến <strong id="displayOtpEmail">email</strong> của bạn. Vui lòng nhập mã để hoàn tất.</p>
+        
+        		<input type="text" id="otpInput" placeholder="Nhập mã 6 số (VD: 123456)" maxlength="6" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1.2rem; text-align: center; letter-spacing: 4px; margin-bottom: 16px;">
+        
+        		<button id="verifyOtpBtn" class="submit-btn" style="width: 100%; margin-bottom: 12px;">Xác minh & Tiếp tục</button>
+        		<button id="resendOtpBtn" style="background: none; border: none; color: #4f46e5; cursor: pointer; font-weight: 500;">Gửi lại mã OTP</button>
+    		</div>
+		</div>
 	</main>
 
-	<iframe class="footer-embed" src="footer.html" title="Site Footer" loading="eager"></iframe>
-  <script src="api.js"></script>
+	<div id="footer-placeholder"></div>
+	
+	<script src="dashboard-buyer/shared/api.js"></script>
+	<script src="load-layout.js"></script>
 	<script src="register.js"></script>
 </body>
 </html>

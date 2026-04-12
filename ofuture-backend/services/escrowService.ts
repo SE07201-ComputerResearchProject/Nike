@@ -19,6 +19,7 @@ import { pool } from '../config/db';
 import { LogModel, LOG_EVENTS } from '../models/logModel';
 import logger from '../utils/logger';
 import OutboxService from './outboxService';
+import WalletService from './walletService';
 
 const PLATFORM_FEE_RATE = 0.025; // 2.5 %
 
@@ -237,6 +238,20 @@ const releaseToSeller = async ({ orderId, buyerId, ipAddress }: ReleaseToSellerP
 
     logger.info(`Escrow release enqueued: orderId=${orderId} netAmount=${escrow.net_amount} escrowId=${escrow.id}`);
 
+    // After transaction commits, transfer to seller wallet
+    try {
+      await WalletService.transferFromEscrowRelease(
+        order.seller_id,
+        parseFloat(escrow.net_amount),
+        escrow.id,
+        orderId,
+        `Funds released from order ${orderId}`
+      );
+    } catch (walletErr) {
+      logger.error('Wallet transfer failed:', walletErr);
+      // Don't fail the release, just log it
+    }
+
     return { success: true, message: 'Release scheduled. Funds will be transferred to the seller shortly.', orderId, netToSeller: parseFloat(escrow.net_amount), platformFee: parseFloat(escrow.platform_fee), escrowStatus: 'releasing', orderStatus: order.status };
 
   } catch (err) {
@@ -293,6 +308,20 @@ const refundToBuyer = async ({ orderId, requesterId, requesterRole, reason, ipAd
     await escrowLog({ userId: requesterId, eventType: LOG_EVENTS.ESCROW_REFUNDED, orderId, amount: escrow.amount, message: `Refund enqueued. escrowId=${escrow.id} reason="${reason}"`, ipAddress });
 
     logger.info(`Escrow refund enqueued: orderId=${orderId} amount=${escrow.amount} escrowId=${escrow.id}`);
+
+    // After transaction commits, refund to buyer wallet
+    try {
+      await WalletService.refundFromEscrow(
+        order.buyer_id,
+        parseFloat(escrow.amount),
+        escrow.id,
+        orderId,
+        reason || 'Order refunded'
+      );
+    } catch (walletErr) {
+      logger.error('Wallet refund failed:', walletErr);
+      // Don't fail the refund, just log it
+    }
 
     return { success: true, message: 'Refund scheduled. The refund will be processed shortly.', orderId, amount: parseFloat(escrow.amount), escrowStatus: 'refunding', orderStatus: order.status };
 

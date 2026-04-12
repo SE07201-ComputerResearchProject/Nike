@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý Đơn hàng | O'Future</title>
+  <link rel="stylesheet" href="../shared/buyer.css">
+  <link rel="stylesheet" href="../shared/notifications.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="../buyer-home/index.html">Dashboard</a>
+        <a href="../buyer-products/index.html">Sản phẩm</a>
+        <a href="../buyer-cart/index.html">Giỏ hàng</a>
+        <a href="../buyer-checkout/index.html">Thanh toán</a>
+        <a class="active" href="index.html">Đơn hàng</a>
+        <a href="../buyer-disputes/index.html">Tranh chấp</a>
+        <a href="../buyer-profile/index.html">Tài khoản</a>
+        <a href="../buyer-contact/index.html">Hỗ trợ</a>
+        <a href="../buyer-reviews/index.html">Đánh giá</a>
+        <a href="../buyer-wallet/index.html">Ví tiền</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="search-box">
+          <input type="text" id="searchOrderInput" placeholder="Tìm theo Mã đơn hàng...">
+        </div>
+        <div class="top-actions">
+          <div class="avatar" id="userAvatar">U</div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Lịch sử Giao dịch</h1>
+        <p>Quản lý các đơn mua sỉ, yêu cầu hàng mẫu và trạng thái giải ngân ký quỹ.</p>
+      </div>
+
+      <div class="filters-container card">
+        <div class="order-type-filter">
+          <label style="font-weight: 600; margin-right: 10px;">Loại giao dịch:</label>
+          <select id="orderTypeSelect" class="form-control" style="width: 200px; display: inline-block;">
+            <option value="orders">Đơn mua sỉ (Chính thức)</option>
+            <option value="samples">Yêu cầu Hàng mẫu</option>
+          </select>
+        </div>
+
+        <div class="tabs" id="statusTabs">
+          <button class="tab-btn active" data-status="all">Tất cả</button>
+          <button class="tab-btn" data-status="pending">Chờ thanh toán</button>
+          <button class="tab-btn" data-status="paid">Đã thanh toán</button>
+          <button class="tab-btn" data-status="shipped">Đang giao hàng</button>
+          <button class="tab-btn" data-status="completed">Hoàn thành</button>
+          <button class="tab-btn" data-status="cancelled">Đã hủy / Hoàn tiền</button>
+        </div>
+      </div>
+
+      <div id="ordersContainer" class="orders-list">
+        <p class="muted">Đang tải dữ liệu đơn hàng...</p>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="disputeModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Gửi Yêu cầu Khiếu nại / Hoàn tiền</h3>
+        <span class="close" onclick="closeDisputeModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="alert-warning" style="background: #fff7ed; color: #c2410c; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
+          <strong>Lưu ý:</strong> Tiền của bạn đang được Ký quỹ. Nếu hàng hóa có lỗi, sai mẫu mã, hệ thống sẽ tạm giữ tiền và hỗ trợ hoàn trả.
+        </div>
+        <div class="form-group">
+          <label>Lý do khiếu nại *</label>
+          <textarea id="disputeReason" rows="4" class="form-control" placeholder="Mô tả chi tiết vấn đề bạn gặp phải với đơn hàng này..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeDisputeModal()">Hủy bỏ</button>
+        <button class="btn btn-primary" id="submitDisputeBtn" style="background: #ef4444; border: none;" onclick="submitDispute()">Gửi khiếu nại</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="../shared/chat-widget.js"></script>
+  <script src="../shared/notifications.js"></script>
+  <script src="../shared/notification-visibility.js"></script>
+  <script src="../shared/ws-client.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

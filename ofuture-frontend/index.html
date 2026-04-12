@@ -14,7 +14,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="dashboard-buyer/shared/style.css" />
 </head>
 <body>
   <header class="header">
@@ -27,15 +27,12 @@
       <nav class="menu">
         <a href="#about">Giới thiệu</a>
         <a href="#features">Tính năng</a>
-        <a href="product.html">Sản phẩm</a>
-        <a href="cart.html">Giỏ hàng</a>
-        <a href="orders.html">Đơn hàng</a>
-        <a href="profile-management.html">Tài khoản</a>
+        <a href="#contact">Liên hệ</a>
       </nav>
 
-      <div class="nav-actions">
-        <a href="login.html" class="btn btn-outline">Đăng nhập</a>
-        <a href="cart.html" class="btn btn-primary">Giỏ hàng</a>
+      <div class="header-actions">
+        <a href="login.html" class="btn btn-outline" style="margin-right: 10px;">Đăng nhập</a>
+        <a href="register.html" class="btn btn-primary">Đăng ký ngay</a>
       </div>
     </div>
   </header>
@@ -447,55 +444,41 @@
   </main>
 
   <footer class="footer" id="contact">
-    <div class="container footer-grid">
-      <div>
-        <a href="#" class="logo footer-logo">
-          <span class="logo-mark">O</span>
-          <span class="logo-text">O’Future</span>
-        </a>
-        <p class="footer-text">
-          Hệ sinh thái phân phối hàng sỉ nội địa hướng đến tính minh bạch, an toàn
-          và tối ưu hiệu quả giao dịch.
-        </p>
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <h2>O’Future</h2>
+        <p>Nền tảng thương mại sỉ nội địa an toàn, minh bạch và tối ưu chi phí cho nhà cung cấp và tiểu thương.</p>
       </div>
-
       <div>
-        <h4>Liên kết</h4>
+        <h4>Về chúng tôi</h4>
         <ul>
-          <li><a href="#about">Giới thiệu</a></li>
-          <li><a href="#features">Tính năng</a></li>
-          <li><a href="product.html">Sản phẩm</a></li>
-          <li><a href="contact.html">Liên hệ</a></li>
-          <li><a href="sitemap.html">Sơ đồ trang</a></li>
+          <li><a href="#about">Câu chuyện O’Future</a></li>
+          <li><a href="#features">Chính sách nền tảng</a></li>
+          <li><a href="#rules">Quy chế hoạt động</a></li>
         </ul>
       </div>
-
       <div>
-        <h4>Tài khoản</h4>
+        <h4>Hỗ trợ</h4>
         <ul>
-          <li><a href="login.html">Đăng nhập</a></li>
-          <li><a href="profile-management.html">Quản lý tài khoản</a></li>
-          <li><a href="orders.html">Đơn hàng của tôi</a></li>
-          <li><a href="review.html">Đánh giá</a></li>
+          <li><a href="login.html">Đăng nhập tài khoản</a></li>
+          <li><a href="#">Trung tâm trợ giúp</a></li>
         </ul>
       </div>
-
       <div>
         <h4>Thông tin liên hệ</h4>
         <ul>
-          <li>Email: contact@ofuture.vn</li>
+          <li>Email: support@ofuture.vn</li>
           <li>Hotline: 0123 456 789</li>
-          <li>Địa chỉ: Việt Nam</li>
+          <li>Địa chỉ: TP. Hồ Chí Minh, Việt Nam</li>
         </ul>
       </div>
     </div>
-
     <div class="container footer-bottom">
       <p>© 2026 O’Future. All rights reserved.</p>
     </div>
   </footer>
 
-  <script src="api.js"></script>
+  <script src="dashboard-buyer/shared/api.js"></script>
   <script>
     (function(){
       const slider = document.querySelector('.dashboard-slider');
@@ -515,6 +498,5 @@
       });
     })();
   </script>
-  <script src="chat-widget.js"></script>
 </body>
 </html>

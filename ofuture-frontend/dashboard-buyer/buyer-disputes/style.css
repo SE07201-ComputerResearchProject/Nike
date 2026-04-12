@@ -1,0 +1,179 @@
+/* ============================================================
+   Disputes List Page - Buyer Dashboard
+   ============================================================ */
+
+.disputes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dispute-card {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 20px;
+  align-items: center;
+  border-left: 4px solid #2563eb;
+  transition: all 0.2s;
+}
+
+.dispute-card:hover {
+  box-shadow: 0 15px 40px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+}
+
+.dispute-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.dispute-id {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  word-break: break-all;
+}
+
+.dispute-reason {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 6px;
+  line-height: 1.5;
+  max-width: 400px;
+}
+
+.dispute-info {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.dispute-info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dispute-info-item label {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.dispute-info-item span {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.dispute-card-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.open {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.in_progress {
+  background: #fed7aa;
+  color: #92400e;
+}
+
+.status-badge.resolved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.closed {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+.dispute-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dispute-actions .btn {
+  padding: 8px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+  width: 100%;
+  text-align: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: #f8fafc;
+  border-radius: 16px;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.3;
+}
+
+.empty-state-text {
+  font-size: 16px;
+  color: #0f172a;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.empty-state-description {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dispute-card {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .dispute-card-status {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .dispute-actions {
+    flex-direction: row;
+    margin-top: 8px;
+  }
+
+  .dispute-actions .btn {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .dispute-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dispute-card-status {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}

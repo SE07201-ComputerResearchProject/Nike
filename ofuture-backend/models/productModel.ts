@@ -11,7 +11,10 @@ interface CreateProductParams {
   slug: string;
   description?: string;
   category: string;
+  categoryId?: string;
   price: number;
+  wholesalePrice?: number;
+  minimumQuantity?: number;
   stockQuantity?: number;
   imageUrls?: string[];
 }
@@ -30,13 +33,13 @@ interface ListProductParams {
 const ProductModel = {
 
   // ── Create ───────────────────────────────
-  async create({ sellerId, name, slug, description, category, price, stockQuantity, imageUrls }: CreateProductParams) {
+  async create({ sellerId, name, slug, description, category, categoryId, price, wholesalePrice, minimumQuantity, stockQuantity, imageUrls }: CreateProductParams) {
     const [result]: any = await pool.execute(
       `INSERT INTO products
-         (seller_id, name, slug, description, category, price, stock_quantity, image_urls)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [sellerId, name, slug, description ?? null, category, price,
-       stockQuantity ?? 0, imageUrls ? JSON.stringify(imageUrls) : null]
+         (seller_id, name, slug, description, category, category_id, price, wholesale_price, minimum_quantity, stock_quantity, image_urls)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [sellerId, name, slug, description ?? null, category, categoryId ?? null, price, 
+       wholesalePrice ?? null, minimumQuantity ?? 1, stockQuantity ?? 0, imageUrls ? JSON.stringify(imageUrls) : null]
     );
     return result;
   },
@@ -102,7 +105,7 @@ const ProductModel = {
 
   // ── Update ────────────────────────────────
   async update(id: string, sellerId: string | undefined, fields: any) {
-    const allowed = ['name', 'description', 'category', 'price', 'stock_quantity', 'image_urls', 'status'];
+    const allowed = ['name', 'description', 'category', 'category_id', 'price', 'wholesale_price', 'minimum_quantity', 'stock_quantity', 'image_urls', 'status'];
     const updates = [];
     const params: any[]  = [];
 

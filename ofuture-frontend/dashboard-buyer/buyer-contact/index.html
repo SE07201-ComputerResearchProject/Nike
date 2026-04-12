@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liên hệ & Hỗ trợ | O'Future</title>
+  <link rel="stylesheet" href="../shared/buyer.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="../buyer-home/index.html">Dashboard</a>
+        <a href="../buyer-products/index.html">Sản phẩm</a>
+        <a href="../buyer-cart/index.html">Giỏ hàng</a>
+        <a href="../buyer-checkout/index.html">Thanh toán</a>
+        <a href="../buyer-orders/index.html">Đơn hàng</a>
+        <a href="../buyer-disputes/index.html">Tranh chấp</a>
+        <a href="../buyer-profile/index.html">Tài khoản</a>
+        <a class="active" href="index.html">Hỗ trợ</a>
+        <a href="../buyer-reviews/index.html">Đánh giá</a>
+        <a href="../buyer-wallet/index.html">Ví tiền</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <button class="btn btn-outline" onclick="window.history.back()" style="padding: 6px 12px; font-size: 14px;">← Quay lại</button>
+        <div class="top-actions">
+          <div class="avatar" id="userAvatar">U</div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Trung tâm Hỗ trợ</h1>
+        <p>Chúng tôi luôn sẵn sàng lắng nghe và giải quyết mọi vấn đề của bạn.</p>
+      </div>
+
+      <div class="contact-layout">
+        <div class="contact-form-container card">
+          <h2 style="margin-bottom: 20px; font-size: 20px;">Gửi yêu cầu hỗ trợ</h2>
+          <form id="contactForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Họ và Tên *</label>
+                <input type="text" id="fullName" class="form-control" readonly style="background: #f1f5f9; color: #64748b; cursor: not-allowed;">
+              </div>
+              <div class="form-group">
+                <label>Địa chỉ Email *</label>
+                <input type="email" id="email" class="form-control" readonly style="background: #f1f5f9; color: #64748b; cursor: not-allowed;">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+              <label>Chủ đề cần hỗ trợ *</label>
+              <select id="subject" class="form-control" required>
+                <option value="">-- Chọn chủ đề --</option>
+                <option value="order_issue">Vấn đề về đơn hàng / vận chuyển</option>
+                <option value="payment_issue">Lỗi thanh toán / Ký quỹ</option>
+                <option value="account_issue">Tài khoản & Bảo mật</option>
+                <option value="partnership">Hợp tác kinh doanh</option>
+                <option value="other">Vấn đề khác</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+              <label>Nội dung chi tiết *</label>
+              <textarea id="message" rows="6" class="form-control" required placeholder="Vui lòng mô tả chi tiết vấn đề để chúng tôi hỗ trợ bạn nhanh nhất..."></textarea>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; margin-top: 20px; padding: 14px; font-size: 16px;">
+              Gửi Yêu Cầu
+            </button>
+          </form>
+        </div>
+
+        <div class="contact-info-container">
+          <div class="card info-card">
+            <h2>Thông tin liên hệ</h2>
+            <div class="info-list">
+              <div class="info-item">
+                <span class="icon">📧</span>
+                <div>
+                  <strong>Email Hỗ trợ</strong>
+                  <p>support@ofuture.vn</p>
+                </div>
+              </div>
+              <div class="info-item">
+                <span class="icon">📞</span>
+                <div>
+                  <strong>Hotline (24/7)</strong>
+                  <p>0123 456 789</p>
+                </div>
+              </div>
+              <div class="info-item">
+                <span class="icon">🏢</span>
+                <div>
+                  <strong>Văn phòng chính</strong>
+                  <p>Khu Công nghệ cao, TP. Hồ Chí Minh, Việt Nam</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card ai-support-card" style="background: linear-gradient(135deg, #e0e7ff, #ede9fe); border: 1px solid #c7d2fe; margin-top: 20px;">
+            <h2 style="color: #4338ca; font-size: 18px; margin-bottom: 10px;">Trợ lý Ảo O'Future AI 🤖</h2>
+            <p style="color: #4f46e5; font-size: 14px; margin-bottom: 16px;">Cần giải đáp ngay lập tức? Hãy trò chuyện với Trợ lý AI của chúng tôi để tra cứu chính sách, hướng dẫn thanh toán và quản lý đơn hàng.</p>
+            <button class="btn btn-primary" style="background: #4f46e5; width: 100%;" onclick="alert('Vui lòng sử dụng Widget Chat ở góc dưới màn hình!')">Mở khung Chat AI</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  
+  <script src="../shared/api.js"></script>
+  <script src="script.js"></script>
+  <script src="../shared/chat-widget.js"></script>
+</body>
+</html>

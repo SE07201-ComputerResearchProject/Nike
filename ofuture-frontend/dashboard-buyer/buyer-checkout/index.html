@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thanh toán | O'Future</title>
+  <link rel="stylesheet" href="../shared/buyer.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="../buyer-home/index.html">Dashboard</a>
+        <a href="../buyer-products/index.html">Sản phẩm</a>
+        <a href="../buyer-cart/index.html">Giỏ hàng</a>
+        <a class="active" href="index.html">Thanh toán</a>
+        <a href="../buyer-orders/index.html">Đơn hàng</a>
+        <a href="../buyer-disputes/index.html">Tranh chấp</a>
+        <a href="../buyer-profile/index.html">Tài khoản</a>
+        <a href="../buyer-contact/index.html">Hỗ trợ</a>
+        <a href="../buyer-reviews/index.html">Đánh giá</a>
+        <a href="../buyer-wallet/index.html">Ví tiền</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <button class="btn btn-outline" onclick="window.history.back()" style="padding: 6px 12px; font-size: 14px;">← Quay lại Giỏ hàng</button>
+        <div class="top-actions">
+          <div class="avatar" id="userAvatar">U</div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Thanh toán an toàn</h1>
+        <p>Hoàn tất thông tin giao hàng và chọn phương thức thanh toán bảo vệ ký quỹ.</p>
+      </div>
+
+      <div class="checkout-layout">
+        <div class="checkout-form">
+          <div class="card section-card">
+            <h2>1. Địa chỉ giao hàng</h2>
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <label>Đường / Số nhà / Tòa nhà *</label>
+                <input type="text" id="addressStreet" class="form-control" placeholder="VD: 123 Lê Lợi, Phường Bến Thành" required>
+              </div>
+              <div class="form-group">
+                <label>Thành phố / Tỉnh *</label>
+                <input type="text" id="addressCity" class="form-control" placeholder="VD: TP. Hồ Chí Minh" required>
+              </div>
+              <div class="form-group">
+                <label>Mã bưu điện (ZIP) *</label>
+                <input type="text" id="addressZip" class="form-control" placeholder="VD: 700000" required>
+              </div>
+              <div class="form-group full-width">
+                <label>Quốc gia</label>
+                <input type="text" id="addressCountry" class="form-control" value="Việt Nam" readonly style="background: #f1f5f9;">
+              </div>
+            </div>
+          </div>
+
+          <div class="card section-card">
+            <h2>2. Phương thức thanh toán</h2>
+            <div class="payment-methods">
+              <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="momo" checked>
+                <div class="option-content">
+                  <span class="icon">📱</span>
+                  <div class="text">
+                    <strong>Ví MoMo / Quét mã MoMo</strong>
+                    <p>Thanh toán siêu tốc, tự động cập nhật hệ thống</p>
+                  </div>
+                </div>
+              </label>
+
+              <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="qr">
+                <div class="option-content">
+                  <span class="icon">🏦</span>
+                  <div class="text">
+                    <strong>Chuyển khoản VietQR (Ký quỹ O'Future)</strong>
+                    <p>Bảo vệ 100% số tiền, hoàn tiền nếu hàng lỗi</p>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="checkout-summary card">
+          <h2>Đơn hàng của bạn</h2>
+          <div id="orderItems" class="order-items-list">
+            <p class="muted">Đang tải...</p>
+          </div>
+          
+          <div class="summary-divider"></div>
+
+          <div class="summary-row">
+            <span>Tạm tính</span>
+            <strong id="subtotalPrice">0 đ</strong>
+          </div>
+          <div class="summary-row">
+            <span>Phí nền tảng (2.5%)</span>
+            <strong id="platformFee">0 đ</strong>
+          </div>
+          <div class="summary-row">
+            <span>Phí vận chuyển (Mặc định)</span>
+            <strong id="shippingFee">30.000 đ</strong>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-row total">
+            <span>Tổng thanh toán</span>
+            <strong id="totalPrice" style="color: #e11d48; font-size: 24px;">0 đ</strong>
+          </div>
+
+          <button id="placeOrderBtn" onclick="handlePlaceOrder()" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 18px; margin-top: 20px;">
+            Xác nhận Đặt hàng
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="qrModal" class="modal">
+    <div class="modal-content" style="text-align: center; max-width: 400px;">
+      <div class="modal-header">
+        <h3>Quét mã thanh toán VietQR</h3>
+      </div>
+      <div class="modal-body">
+        <p style="color: #64748b; margin-bottom: 15px; font-size: 14px;">Mở ứng dụng ngân hàng và quét mã dưới đây để chuyển khoản. Tiền của bạn sẽ được giữ an toàn trong quỹ Escrow.</p>
+        <div id="qrCodeContainer" style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px; min-height: 200px;">
+          <p class="muted">Đang tải mã QR...</p>
+        </div>
+        <p style="color: #ef4444; font-weight: bold; font-size: 20px; margin-bottom: 20px;" id="qrTotalAmount">0 đ</p>
+      </div>
+      <div class="modal-footer" style="justify-content: center; flex-direction: column;">
+        <button class="btn btn-primary" style="width: 100%;" onclick="confirmTransfer()">Tôi đã chuyển khoản thành công</button>
+        <button class="btn btn-outline" style="width: 100%; margin-top: 10px; border:none;" onclick="cancelTransfer()">Hủy giao dịch</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="../shared/api.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

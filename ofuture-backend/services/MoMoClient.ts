@@ -74,7 +74,14 @@ class MoMoClient {
   }
 
   async createPaymentRequest(params: MoMoPaymentParams): Promise<MoMoPaymentResponse> {
-    const requestId = `${params.orderId}_${Date.now()}`;
+    // 1. CHỐNG LỖI FLOAT: Làm tròn số tiền thành số nguyên
+    const amountInt = Math.round(params.amount);
+    
+    // 2. CHỐNG LỖI 400 TRÙNG LẶP: Gắn thêm Date.now() vào orderId
+    // Đảm bảo mỗi lần khách nhấn thanh toán lại, MoMo sẽ coi như một request mới
+    const uniqueMoMoOrderId = `${params.orderId}_${Date.now()}`;
+    const requestId = uniqueMoMoOrderId;
+    
     const orderInfo = params.orderInfo || `Payment for order ${params.orderId}`;
     const redirectUrl = params.redirectUrl || this.redirectUrl;
     const ipnUrl = params.ipnUrl || this.ipnUrl;
@@ -83,10 +90,10 @@ class MoMoClient {
 
     const signatureData = {
       accessKey: this.accessKey,
-      amount: params.amount,
+      amount: amountInt, // Dùng số nguyên
       extraData,
       ipnUrl,
-      orderId: params.orderId,
+      orderId: uniqueMoMoOrderId, // Dùng ID duy nhất gửi sang MoMo
       orderInfo,
       partnerCode: this.partnerCode,
       redirectUrl,
@@ -110,7 +117,6 @@ class MoMoClient {
       });
 
       if (!response.ok) {
-        // Đọc chi tiết lỗi từ MoMo thay vì chỉ lấy statusText
         const errorDetail = await response.text(); 
         console.error('Chi tiết lỗi từ MoMo:', errorDetail);
         throw new Error(`MoMo API error [${response.status}]: ${errorDetail}`);

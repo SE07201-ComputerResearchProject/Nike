@@ -5,6 +5,7 @@ import OrderModel from '../models/orderModel';
 import { pool } from '../config/db';
 import logger from '../utils/logger';
 import escrowService from '../services/escrowService';
+import NotificationService from '../services/notificationService';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -18,7 +19,7 @@ const createDispute = async (req: AuthRequest, res: Response): Promise<any> => {
   try {
     await conn.beginTransaction();
 
-    const { orderId, reason, evidenceUrl } = req.body;
+    const { orderId, reason, evidenceUrls } = req.body;
     const buyerId = req.user.id;
 
     // Verify order exists and belongs to the buyer
@@ -44,7 +45,7 @@ const createDispute = async (req: AuthRequest, res: Response): Promise<any> => {
       order_id: orderId as string,
       complainant_id: buyerId,
       reason: reason as string,
-      evidence_url: evidenceUrl ? (evidenceUrl as string) : undefined // <-- Sửa dòng này
+      evidence_urls: evidenceUrls ? (evidenceUrls as string[]) : undefined
     }, conn);
 
     // 2. Freeze the funds in escrow_transactions
@@ -171,9 +172,141 @@ const resolveDispute = async (req: AuthRequest, res: Response): Promise<any> => 
   }
 };
 
+// ─────────────────────────────────────────────
+// 5. Submit Evidence (Seller/Buyer nộp bằng chứng)
+// ─────────────────────────────────────────────
+const submitEvidence = async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const disputeId = req.params.id as string;
+    const { evidenceUrl, description } = req.body;
+    const userId = req.user.id;
+
+    const dispute = await DisputeModel.findById(disputeId);
+    if (!dispute) return res.status(404).json({ success: false, message: 'Không tìm thấy khiếu nại.' });
+
+    const order: any = await OrderModel.findById(dispute.order_id);
+    if (!order) return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng.' });
+
+    // Xác định xem ai đang nộp bằng chứng
+    let columnToUpdate = '';
+    if (order.seller_id === userId) columnToUpdate = 'seller_evidence';
+    else if (order.buyer_id === userId) columnToUpdate = 'buyer_evidence';
+    else return res.status(403).json({ success: false, message: 'Từ chối truy cập.' });
+
+    // Đóng gói bằng chứng thành JSON
+    const evidenceData = JSON.stringify({ type: 'image', url: evidenceUrl, text: description });
+
+    await pool.execute(
+      `UPDATE disputes SET ${columnToUpdate} = ? WHERE id = ?`,
+      [evidenceData, disputeId]
+    );
+
+    res.status(200).json({ success: true, message: 'Nộp bằng chứng thành công.' });
+  } catch (error: any) {
+    logger.error('submitEvidence error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi hệ thống khi nộp bằng chứng.' });
+  }
+};
+
+// ─────────────────────────────────────────────
+// 6. Send chat message in dispute
+// ─────────────────────────────────────────────
+const sendChatMessage = async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const disputeId = req.params.disputeId as string;
+    const { message, attachments } = req.body;
+    const userId = req.user.id;
+
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Message cannot be empty.' });
+    }
+
+    const DisputeChatService = (await import('../services/disputeChatService')).default;
+    const result = await DisputeChatService.sendMessage(disputeId, userId, message, attachments);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    // Notify the other party in the dispute
+    try {
+      const dispute: any = await DisputeModel.findById(disputeId);
+      if (dispute) {
+        const otherUserId = userId === dispute.complainant_id ? dispute.seller_id : dispute.complainant_id;
+        
+        if (otherUserId) {
+          NotificationService.notifyChatMessage({
+            disputeId,
+            otherUserId,
+            senderId: userId,
+            senderName: req.user?.username || 'User',
+            message: message.substring(0, 100), // Preview
+            orderId: dispute.order_id
+          }).catch(err => logger.error('Notification error:', err));
+        }
+      }
+    } catch (notifyErr) {
+      logger.error('Failed to send chat notification:', notifyErr);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Message sent successfully.',
+      data: { messageId: result.id }
+    });
+  } catch (error: any) {
+    logger.error('sendChatMessage error:', error);
+    res.status(500).json({ success: false, message: 'Failed to send message.' });
+  }
+};
+
+// ─────────────────────────────────────────────
+// 7. Get dispute chat history
+// ─────────────────────────────────────────────
+const getDisputeChat = async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const disputeId = req.params.disputeId as string;
+    const { page = '1', limit = '20' } = req.query;
+
+    const DisputeChatService = (await import('../services/disputeChatService')).default;
+    const messages = await DisputeChatService.getDisputeChat(
+      disputeId,
+      parseInt(page as string),
+      parseInt(limit as string)
+    );
+
+    res.status(200).json({ success: true, data: messages });
+  } catch (error: any) {
+    logger.error('getDisputeChat error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch chat history.' });
+  }
+};
+
+// ─────────────────────────────────────────────
+// 8. Mark chat as read
+// ─────────────────────────────────────────────
+const markChatAsRead = async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const disputeId = req.params.disputeId as string;
+    const userId = req.user.id;
+
+    const DisputeChatService = (await import('../services/disputeChatService')).default;
+    await DisputeChatService.markMessagesAsRead(disputeId, userId);
+
+    res.status(200).json({ success: true, message: 'Messages marked as read.' });
+  } catch (error: any) {
+    logger.error('markChatAsRead error:', error);
+    res.status(500).json({ success: false, message: 'Failed to mark messages as read.' });
+  }
+};
+
 export = {
   createDispute,
   getMyDisputes,
   getAllDisputes,
-  resolveDispute
+  resolveDispute,
+  submitEvidence,
+  sendChatMessage,
+  getDisputeChat,
+  markChatAsRead
 };

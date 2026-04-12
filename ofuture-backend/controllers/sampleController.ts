@@ -101,7 +101,7 @@ const updateSampleStatus = async (req: AuthRequest, res: Response): Promise<any>
       return res.status(403).json({ success: false, message: 'Access denied. You do not have permission to change this sample status.' });
     }
 
-    const validStatuses = ['approved', 'shipped', 'cancelled', 'returned'];
+    const validStatuses = ['approved', 'rejected', 'shipped', 'cancelled', 'returned'];
     if (!validStatuses.includes(status as string)) {
       return res.status(400).json({ success: false, message: 'Invalid status provided.' });
     }

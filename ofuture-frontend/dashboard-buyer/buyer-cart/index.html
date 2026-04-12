@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giỏ hàng | O'Future</title>
+  <link rel="stylesheet" href="../shared/buyer.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="../buyer-home/index.html">Dashboard</a>
+        <a href="../buyer-products/index.html">Sản phẩm</a>
+        <a class="active" href="index.html">Giỏ hàng</a>
+        <a href="../buyer-checkout/index.html">Thanh toán</a>
+        <a href="../buyer-orders/index.html">Đơn hàng</a>
+        <a href="../buyer-disputes/index.html">Tranh chấp</a>
+        <a href="../buyer-profile/index.html">Tài khoản</a>
+        <a href="../buyer-contact/index.html">Hỗ trợ</a>
+        <a href="../buyer-reviews/index.html">Đánh giá</a>
+        <a href="../buyer-wallet/index.html">Ví tiền</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <button class="btn btn-outline" onclick="window.history.back()" style="padding: 6px 12px; font-size: 14px;">← Quay lại</button>
+        <div class="top-actions">
+          <a href="index.html" class="cart-icon-wrapper" style="text-decoration: none; position: relative; margin-right: 15px; font-size: 24px;">
+            🛒 <span id="cartBadge" style="position: absolute; top: -8px; right: -12px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px; font-weight: bold;">0</span>
+          </a>
+          <div class="avatar" id="userAvatar">U</div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Giỏ hàng của bạn</h1>
+        <p>Kiểm tra lại số lượng sản phẩm trước khi tiến hành thanh toán.</p>
+      </div>
+
+      <div class="cart-layout">
+        <div class="cart-items-container" id="cartList">
+          <p class="loading">Đang tải giỏ hàng...</p>
+        </div>
+
+        <div class="cart-summary card">
+          <h2>Tổng quan đơn hàng</h2>
+          
+          <div class="summary-row">
+            <span>Tạm tính (Subtotal)</span>
+            <strong id="subtotalPrice">0 đ</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Phí nền tảng (2.5%)</span>
+            <strong id="platformFee">0 đ</strong>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-row total">
+            <span>Tổng thanh toán</span>
+            <strong id="totalPrice" style="color: #e11d48; font-size: 24px;">0 đ</strong>
+          </div>
+
+          <button id="checkoutBtn" onclick="proceedToCheckout()" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 16px; margin-top: 20px;">
+            Tiến hành Thanh toán
+          </button>
+
+          <a href="../buyer-products/index.html" class="btn btn-outline" style="width: 100%; padding: 14px; font-size: 16px; margin-top: 12px; text-align: center; display: block;">
+            Tiếp tục mua sắm
+          </a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="../shared/api.js"></script>
+  <script src="../shared/chat-widget.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

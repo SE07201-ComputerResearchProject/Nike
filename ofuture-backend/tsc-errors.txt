@@ -1,0 +1,64 @@
+controllers/categoryController.ts(55,52): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/categoryController.ts(85,54): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/categoryController.ts(115,58): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/categoryController.ts(222,50): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/categoryController.ts(240,52): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/categoryController.ts(274,50): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/notificationController.ts(113,58): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/notificationController.ts(128,58): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/notificationController.ts(209,58): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/notificationController.ts(224,66): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(18,51): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(27,65): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(51,51): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(60,70): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(84,51): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(93,72): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(115,57): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(145,58): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(187,51): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(224,9): error TS2322: Type 'string | string[]' is not assignable to type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(264,57): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(296,56): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(306,57): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(338,57): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/productVariantController.ts(358,56): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+controllers/walletController.ts(217,7): error TS2345: Argument of type 'null' is not assignable to parameter of type 'string | undefined'.
+models/categoryModel.ts(2,18): error TS2307: Cannot find module '../config/database' or its corresponding type declarations.
+models/categoryModel.ts(136,21): error TS7006: Parameter 'cat' implicitly has an 'any' type.
+models/categoryModel.ts(140,21): error TS7006: Parameter 'cat' implicitly has an 'any' type.
+models/disputeChatModel.ts(2,18): error TS2307: Cannot find module '../config/database' or its corresponding type declarations.
+models/notificationModel.ts(7,18): error TS2307: Cannot find module '../config/database' or its corresponding type declarations.
+models/productVariantModel.ts(2,18): error TS2307: Cannot find module '../config/database' or its corresponding type declarations.
+models/productVariantModel.ts(140,25): error TS7006: Parameter 'v' implicitly has an 'any' type.
+routes/categoryRoutes.ts(3,10): error TS2305: Module '"../middleware/auth"' has no exported member 'authMiddleware'.
+routes/categoryRoutes.ts(3,26): error TS2305: Module '"../middleware/auth"' has no exported member 'adminMiddleware'.
+routes/notificationRoutes.ts(17,52): error TS2497: This module can only be referenced with ECMAScript imports/exports by turning on the 'esModuleInterop' flag and referencing its default export.
+routes/notificationRoutes.ts(18,30): error TS2497: This module can only be referenced with ECMAScript imports/exports by turning on the 'esModuleInterop' flag and referencing its default export.
+routes/productVariantRoutes.ts(3,10): error TS2305: Module '"../middleware/auth"' has no exported member 'authMiddleware'.
+services/disputeChatService.ts(126,74): error TS2554: Expected 1-2 arguments, but got 3.

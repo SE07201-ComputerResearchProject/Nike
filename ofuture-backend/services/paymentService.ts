@@ -13,6 +13,7 @@ import { pool } from '../config/db';
 import PaymentModel from '../models/paymentModel';
 import MoMoClient, { MoMoCallbackData } from './MoMoClient';
 import QRCodeGenerator from './QRCodeGenerator';
+import WalletService from './walletService';
 
 // ═════════════════════════════════════════════
 // PHẦN 1: LOGIC GIẢ LẬP (CŨ) - DÀNH CHO ESCROW
@@ -153,7 +154,12 @@ const handleMoMoCallback = async (callbackData: MoMoCallbackData): Promise<void>
   const isValid = MoMoClient.verifySignature(callbackData, callbackData.signature);
   if (!isValid) throw new Error('Invalid signature');
 
-  const payment = await PaymentModel.findByOrderIdAndMethod(callbackData.orderId, 'momo');
+  // --- TÁCH LẤY UUID GỐC ---
+  // callbackData.orderId lúc này là: "UUID_TIMESTAMP" -> Tách mảng lấy phần đầu
+  const actualOrderId = callbackData.orderId.split('_')[0];
+
+  // Dùng actualOrderId để truy vấn Database
+  const payment = await PaymentModel.findByOrderIdAndMethod(actualOrderId, 'momo');
   if (!payment) throw new Error('Payment record not found');
   if (payment.status !== 'pending') return;
 
@@ -164,23 +170,44 @@ const handleMoMoCallback = async (callbackData: MoMoCallbackData): Promise<void>
   try {
     await conn.beginTransaction();
 
+    // Dùng actualOrderId thay vì callbackData.orderId
+    const [[order]]: any = await conn.execute(
+      'SELECT buyer_id, total_amount FROM orders WHERE id = ? LIMIT 1',
+      [actualOrderId]
+    );
+
     await conn.execute(
       `UPDATE payments SET status = ?, transaction_id = ? WHERE id = ?`,
       [newStatus, callbackData.transId || null, payment.id]
     );
 
     if (isSuccess) {
-      await conn.execute(`UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, [callbackData.orderId]);
+      await conn.execute(`UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, [actualOrderId]);
       await conn.execute(
         `UPDATE escrow_transactions SET status = 'held', held_at = NOW() WHERE order_id = ? AND status = 'pending'`,
-        [callbackData.orderId]
+        [actualOrderId]
       );
-      logger.info(`[MoMo] Payment Success. Order ${callbackData.orderId} paid & funds held in escrow.`);
+      logger.info(`[MoMo] Payment Success. Order ${actualOrderId} paid & funds held in escrow.`);
     } else {
-      logger.warn(`[MoMo] Payment Failed for Order ${callbackData.orderId}: ${callbackData.message}`);
+      logger.warn(`[MoMo] Payment Failed for Order ${actualOrderId}: ${callbackData.message}`);
     }
 
     await conn.commit();
+
+    // After transaction commits, update wallet
+    if (isSuccess && order) {
+      try {
+        await WalletService.depositFromPayment(
+          order.buyer_id,
+          callbackData.amount,
+          payment.id,
+          'momo',
+          `MoMo payment for order ${actualOrderId}`
+        );
+      } catch (walletErr) {
+        logger.error('Wallet deposit failed:', walletErr);
+      }
+    }
   } catch (err) {
     await conn.rollback();
     logger.error('handleMoMoCallback transaction error:', err);

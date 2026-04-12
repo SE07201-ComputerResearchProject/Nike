@@ -6,12 +6,12 @@ export interface DisputeData {
   order_id: string;
   complainant_id: string;
   reason: string;
-  evidence_url?: string;
+  evidence_urls?: string[]; // NEW: JSON array instead of single URL
 }
 
 export class DisputeModel {
   /**
-   * 1. Tạo mới một khiếu nại
+   * 1. Create new dispute
    */
   static async create(data: DisputeData, conn: any = null): Promise<string> {
     const db = conn ?? pool;
@@ -19,21 +19,21 @@ export class DisputeModel {
     
     await db.execute(
       `INSERT INTO disputes 
-        (id, order_id, complainant_id, reason, evidence_url)
+        (id, order_id, complainant_id, reason, evidence_urls)
        VALUES (?, ?, ?, ?, ?)`,
       [
         id,
         data.order_id,
         data.complainant_id,
         data.reason,
-        data.evidence_url || null
+        data.evidence_urls ? JSON.stringify(data.evidence_urls) : null
       ]
     );
     return id;
   }
 
   /**
-   * 2. Lấy chi tiết một khiếu nại theo ID
+   * 2. Get dispute details by ID
    */
   static async findById(id: string): Promise<any> {
     const [rows]: any = await pool.execute(
@@ -48,11 +48,16 @@ export class DisputeModel {
        WHERE d.id = ?`,
       [id]
     );
+    
+    if (rows.length > 0 && rows[0].evidence_urls && typeof rows[0].evidence_urls === 'string') {
+      rows[0].evidence_urls = JSON.parse(rows[0].evidence_urls);
+    }
+    
     return rows[0] || null;
   }
 
   /**
-   * 3. Lấy danh sách khiếu nại của một người dùng (Buyer)
+   * 3. Get disputes by user (Buyer)
    */
   static async findByUser(userId: string, limit: number = 20, offset: number = 0): Promise<any[]> {
     const [rows]: any = await pool.execute(
@@ -68,7 +73,7 @@ export class DisputeModel {
   }
 
   /**
-   * 4. Admin lấy toàn bộ danh sách khiếu nại (có filter theo trạng thái)
+   * 4. Admin get all disputes with status filter
    */
   static async adminListAll(status?: string, limit: number = 20, offset: number = 0): Promise<any[]> {
     let query = `
@@ -93,16 +98,68 @@ export class DisputeModel {
   }
 
   /**
-   * 5. Admin cập nhật trạng thái khiếu nại (Xử lý xong)
+   * 5. Admin update dispute status
    */
-  static async updateStatus(id: string, newStatus: string, conn: any = null): Promise<boolean> {
+  static async updateStatus(
+    id: string, 
+    newStatus: string, 
+    resolvedBy?: string, 
+    resolutionNote?: string, 
+    conn: any = null
+  ): Promise<boolean> {
     const db = conn ?? pool;
     const [result]: any = await db.execute(
       `UPDATE disputes 
-       SET status = ?, resolved_at = NOW() 
+       SET status = ?, resolved_at = NOW(), resolved_by = ?, resolution_note = ?
        WHERE id = ?`,
-      [newStatus, id]
+      [newStatus, resolvedBy || null, resolutionNote || null, id]
     );
+    return result.affectedRows > 0;
+  }
+
+  /**
+   * Add evidence URL to dispute
+   */
+  static async addEvidenceUrl(id: string, url: string): Promise<boolean> {
+    const [rows]: any = await pool.execute('SELECT evidence_urls FROM disputes WHERE id = ?', [id]);
+    
+    if (rows.length === 0) return false;
+
+    let urls: string[] = [];
+    if (rows[0].evidence_urls) {
+      urls = JSON.parse(rows[0].evidence_urls);
+    }
+
+    urls.push(url);
+
+    const [result]: any = await pool.execute(
+      'UPDATE disputes SET evidence_urls = ? WHERE id = ?',
+      [JSON.stringify(urls), id]
+    );
+
+    return result.affectedRows > 0;
+  }
+
+  /**
+   * Remove evidence URL from dispute
+   */
+  static async removeEvidenceUrl(id: string, url: string): Promise<boolean> {
+    const [rows]: any = await pool.execute('SELECT evidence_urls FROM disputes WHERE id = ?', [id]);
+    
+    if (rows.length === 0) return false;
+
+    let urls: string[] = [];
+    if (rows[0].evidence_urls) {
+      urls = JSON.parse(rows[0].evidence_urls);
+    }
+
+    urls = urls.filter((u) => u !== url);
+
+    const [result]: any = await pool.execute(
+      'UPDATE disputes SET evidence_urls = ? WHERE id = ?',
+      [JSON.stringify(urls), id]
+    );
+
     return result.affectedRows > 0;
   }
 }

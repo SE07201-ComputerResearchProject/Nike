@@ -1,268 +1,270 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>O'Future - Seller Dashboard</title>
+    <title>Kênh Người Bán | O'Future Seller</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../dashboard-buyer/shared/buyer.css" style="display: none;">
+    <link rel="stylesheet" href="../dashboard-buyer/shared/notifications.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <div id="globalSpinner" class="spinner-overlay">
+        <div class="spinner"></div>
+    </div>
+
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h1>O'Future</h1>
-                <p>Seller Dashboard</p>
+                <div class="brand">O'<span>Future</span></div>
+                <p class="badge badge-warning" style="margin-top: 5px;">Kênh Người Bán</p>
             </div>
-
             <nav class="sidebar-menu">
-                <a href="#" class="menu-item active" data-section="dashboard">
-                    📊 Dashboard
-                </a>
-                <a href="#" class="menu-item" data-section="products">
-                    📦 Products
-                </a>
-                <a href="#" class="menu-item" data-section="orders">
-                    🛒 Orders
-                </a>
-                <a href="#" class="menu-item" data-section="escrow">
-                    💰 Escrow
-                </a>
-                <a href="#" class="menu-item" data-section="disputes">
-                    ⚖️ Disputes
-                </a>
-                <a href="#" class="menu-item" data-section="samples">
-                    🎁 Samples
-                </a>
-                <a href="#" class="menu-item" data-section="reviews">
-                    ⭐ Reviews
-                </a>
+                <a href="#" class="menu-item active" data-section="dashboard">📊 Tổng quan (Dashboard)</a>
+                <p class="menu-label">QUẢN LÝ BÁN HÀNG</p>
+                <a href="#" class="menu-item" data-section="products">📦 Sản phẩm của tôi</a>
+                <a href="#" class="menu-item" data-section="orders">🛒 Đơn hàng (Orders)</a>
+                <a href="#" class="menu-item" data-section="samples">🎁 Yêu cầu Hàng mẫu</a>
+                <p class="menu-label">TÀI CHÍNH & CSKH</p>
+                <a href="#" class="menu-item" data-section="escrow">💰 Ví Ký quỹ (Escrow)</a>
+                <a href="#" class="menu-item" data-section="disputes">⚖️ Khiếu nại (Disputes)</a>
+                <a href="#" class="menu-item" data-section="reviews">⭐ Đánh giá (Reviews)</a>
             </nav>
-
-            <div class="sidebar-footer">
-                <button id="logoutBtn" class="logout-btn">Logout</button>
-            </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- Topbar -->
-            <div class="topbar">
-                <h2 id="pageTitle">Dashboard</h2>
-                <div class="user-info">
-                    <span id="username">User</span>
+            <header class="topbar">
+                <h2 id="pageTitle">Tổng quan (Dashboard)</h2>
+                <div class="topbar-right">
+                    <div id="sellerNotificationBellWrapper" style="position: relative; display: none; margin-right: 20px;">
+                      <button id="sellerNotificationBell" class="notification-bell" title="Thông báo" style="font-size: 24px; background: transparent; border: none; cursor: pointer; padding: 8px; border-radius: 8px;">🔔
+                        <span id="sellerNotificationBadge" style="position: absolute; top: -4px; right: -4px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; font-weight: bold; display: none; border: 2px solid white;"></span>
+                      </button>
+                      <div id="sellerNotificationDropdown" style="position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 32px rgba(15, 23, 42, 0.12); width: 380px; max-height: 500px; overflow-y: auto; z-index: 10000; margin-top: 8px; display: none;"></div>
+                    </div>
+                    <span class="welcome-text">Xin chào, <strong id="username">Seller</strong></span>
+                    <button id="logoutBtn" class="btn btn-outline btn-small">Đăng xuất</button>
                 </div>
-            </div>
+            </header>
 
-            <!-- Content Area -->
-            <div class="content">
-                <!-- Dashboard Section -->
+            <div class="content-body">
+                
                 <section id="dashboard-section" class="section active">
-                    <h2>Welcome to Seller Dashboard</h2>
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <h3>Total Products</h3>
+                            <h3>Sản phẩm đang bán</h3>
                             <p id="totalProducts">0</p>
                         </div>
                         <div class="stat-card">
-                            <h3>Total Orders</h3>
+                            <h3>Tổng Đơn hàng</h3>
                             <p id="totalOrders">0</p>
                         </div>
                         <div class="stat-card">
-                            <h3>Escrow Balance</h3>
-                            <p id="totalEscrow">$0</p>
+                            <h3>Tiền đang giữ (Held)</h3>
+                            <p id="totalHeld" style="color: #f59e0b;">$0.00</p>
                         </div>
                         <div class="stat-card">
-                            <h3>Average Rating</h3>
-                            <p id="avgRating">0 ⭐</p>
+                            <h3>Tiền thực nhận (Released)</h3>
+                            <p id="totalReleased" style="color: #10b981;">$0.00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card" style="margin-top: 24px;">
+                        <h3>Biểu đồ Doanh thu (7 ngày qua)</h3>
+                        <div style="height: 300px; width: 100%; margin-top: 15px;">
+                            <canvas id="revenueChart"></canvas>
                         </div>
                     </div>
                 </section>
 
-                <!-- Products Section -->
                 <section id="products-section" class="section">
-                    <div class="section-header">
-                        <h2>Products</h2>
-                        <button id="addProductBtn" class="btn btn-primary">+ Add Product</button>
-                    </div>
-
-                    <!-- Add Product Form -->
-                    <div id="addProductForm" class="form-modal" style="display: none;">
-                        <div class="form-content">
-                                <h3 id="productFormTitle">Add New Product</h3>
-                                <form id="productForm">
-                                <input type="hidden" id="editingProductId" value="">
-                                <div class="form-group">
-                                    <label>Product Name</label>
-                                    <input type="text" id="productName" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Description</label>
-                                    <textarea id="productDesc"></textarea>
-                                </div>
-                                    <div class="form-group">
-                                        <label>Category</label>
-                                        <select id="productCategory">
-                                            <option value="default">General</option>
-                                            <option value="clothing">Clothing</option>
-                                            <option value="accessories">Accessories</option>
-                                            <option value="electronics">Electronics</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Images</label>
-                                        <input type="file" id="productImages" multiple accept="image/*">
-                                    </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Price</label>
-                                        <input type="number" id="productPrice" step="0.01" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Stock</label>
-                                        <input type="number" id="productStock" required>
-                                    </div>
-                                </div>
-                                <div class="form-actions">
-                                    <button type="submit" class="btn btn-primary">Save Product</button>
-                                    <button type="button" class="btn btn-secondary" onclick="closeProductForm()">Cancel</button>
-                                </div>
-                            </form>
+                    <div class="card">
+                        <div class="table-toolbar">
+                            <input type="text" id="productSearch" class="form-control" placeholder="🔍 Tìm tên sản phẩm..." style="max-width: 300px;">
+                            <button id="addProductBtn" class="btn btn-primary">+ Thêm Sản phẩm mới</button>
                         </div>
-                    </div>
-
-                    <!-- Products Table -->
-                    <div class="table-container">
-                        <div class="table-controls">
-                            <input id="productSearch" class="search-input" placeholder="Search products..." />
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">Ảnh</th>
+                                        <th>Tên & Danh mục</th>
+                                        <th>Giá bán</th>
+                                        <th>Tồn kho</th>
+                                        <th>Trạng thái</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTableBody"></tbody>
+                            </table>
                         </div>
-                        <table id="productsTable">
-                            <thead>
-                                <tr>
-                                    <th>Product Name</th>
-                                    <th>Price</th>
-                                    <th>Stock</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="productsTableBody">
-                                <tr><td colspan="5" class="text-center">Loading...</td></tr>
-                            </tbody>
-                        </table>
+                        <div id="productsPagination"></div>
                     </div>
                 </section>
 
-                <!-- Disputes Section -->
-                <section id="disputes-section" class="section">
-                    <h2>Disputes</h2>
-                    <div class="table-container">
-                        <table id="disputesTable">
-                            <thead>
-                                <tr>
-                                    <th>Dispute ID</th>
-                                    <th>Order</th>
-                                    <th>Buyer</th>
-                                    <th>Issue</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="disputesTableBody">
-                                <tr><td colspan="5" class="text-center">Loading...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <!-- Samples Section -->
-                <section id="samples-section" class="section">
-                    <h2>Samples</h2>
-                    <div class="table-container">
-                        <table id="samplesTable">
-                            <thead>
-                                <tr>
-                                    <th>Sample ID</th>
-                                    <th>Product</th>
-                                    <th>Requestor</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="samplesTableBody">
-                                <tr><td colspan="5" class="text-center">Loading...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <!-- Orders Section -->
                 <section id="orders-section" class="section">
-                    <h2>Orders</h2>
-                    <div class="table-container">
-                        <table id="ordersTable">
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Buyer</th>
-                                    <th>Product</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ordersTableBody">
-                                <tr><td colspan="6" class="text-center">Loading...</td></tr>
-                            </tbody>
-                        </table>
+                    <div class="card">
+                        <div class="table-toolbar">
+                            <select id="orderStatusFilter" class="form-control" style="max-width: 250px;">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="pending">Chờ thanh toán (Pending)</option>
+                                <option value="paid">Chờ giao hàng (Paid)</option>
+                                <option value="shipped">Đang giao (Shipped)</option>
+                                <option value="completed">Hoàn tất (Completed)</option>
+                                <option value="cancelled">Đã hủy (Cancelled)</option>
+                            </select>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Mã Đơn</th>
+                                        <th>Người Mua</th>
+                                        <th>Sản phẩm</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Trạng thái</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="ordersPagination"></div>
                     </div>
                 </section>
 
-                <!-- Escrow Section -->
                 <section id="escrow-section" class="section">
-                    <h2>Escrow Tracking</h2>
-                    <div class="escrow-summary">
-                        <div class="escrow-card">
-                            <h3>Total Held</h3>
-                            <p id="totalHeld">$0</p>
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Mã Đơn (Order ID)</th>
+                                        <th>Tổng thu</th>
+                                        <th>Phí nền tảng</th>
+                                        <th>Thực nhận (Net)</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày giải ngân</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="escrowTableBody"></tbody>
+                            </table>
                         </div>
-                        <div class="escrow-card">
-                            <h3>Total Released</h3>
-                            <p id="totalReleased">$0</p>
-                        </div>
-                    </div>
-
-                    <div class="table-container">
-                        <table id="escrowTable">
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Amount</th>
-                                    <th>Platform Fee</th>
-                                    <th>Net Amount</th>
-                                    <th>Status</th>
-                                    <th>Release Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="escrowTableBody">
-                                <tr><td colspan="6" class="text-center">Loading...</td></tr>
-                            </tbody>
-                        </table>
+                        <div id="escrowPagination"></div>
                     </div>
                 </section>
 
-                <!-- Reviews Section -->
+                <section id="disputes-section" class="section">
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Mã Khiếu nại</th>
+                                        <th>Mã Đơn</th>
+                                        <th>Người khiếu nại</th>
+                                        <th>Lý do (Trích dẫn)</th>
+                                        <th>Trạng thái</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="disputesTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="disputesPagination"></div>
+                    </div>
+                </section>
+
+                <section id="samples-section" class="section">
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Mã Yêu cầu</th>
+                                        <th>Người Mua</th>
+                                        <th>Sản phẩm</th>
+                                        <th>Tiền cọc</th>
+                                        <th>Trạng thái</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="samplesTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="samplesPagination"></div>
+                    </div>
+                </section>
+
                 <section id="reviews-section" class="section">
-                    <h2>Reviews</h2>
-                    <div class="reviews-container" id="reviewsContainer">
-                        <p class="text-center">Loading...</p>
+                    <div class="card">
+                        <div id="reviewsContainer" style="display: grid; gap: 15px;"></div>
+                        <div id="reviewsPagination"></div>
                     </div>
                 </section>
+
             </div>
         </main>
     </div>
 
-    <script src="../api.js"></script>
+    <div id="addProductForm" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+            <h3 id="productFormTitle" style="margin-bottom: 20px;">Thêm Sản phẩm mới</h3>
+            <form id="productForm">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Tên sản phẩm *</label>
+                    <input type="text" id="productName" class="form-control" required>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Danh mục *</label>
+                    <select id="productCategory" class="form-control" required>
+                        <option value="">Chọn danh mục</option>
+                        <option value="Electronics">Điện tử (Electronics)</option>
+                        <option value="Fashion">Thời trang (Fashion)</option>
+                        <option value="Home">Nhà cửa (Home)</option>
+                        <option value="Beauty">Làm đẹp (Beauty)</option>
+                        <option value="Others">Khác (Others)</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group">
+                        <label>Giá bán ($) *</label>
+                        <input type="number" id="productPrice" class="form-control" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tồn kho *</label>
+                        <input type="number" id="productStock" class="form-control" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Mô tả chi tiết</label>
+                    <textarea id="productDesc" class="form-control" rows="4"></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Hình ảnh (Tối đa 5 ảnh, định dạng JPG/PNG)</label>
+                    <input type="file" id="productImages" class="form-control" multiple accept="image   ">
+                    <small style="color: #64748b;">(Lưu ý: Bỏ trống nếu không muốn thay đổi ảnh cũ khi Sửa)</small>
+                </div>
+
+                <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-outline" onclick="closeProductForm()">Hủy</button>
+                    <button type="submit" id="saveProductBtn" class="btn btn-primary">Lưu Sản phẩm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../dashboard-buyer/shared/api.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="../dashboard-buyer/shared/notifications.js"></script>
+    <script src="../dashboard-buyer/shared/notification-visibility.js"></script>
+    <script src="../dashboard-buyer/shared/ws-client.js"></script>
     <script src="script.js"></script>
-    <div id="globalSpinner"><div class="spinner"></div></div>
 </body>
 </html>

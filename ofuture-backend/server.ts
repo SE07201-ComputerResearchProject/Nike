@@ -49,7 +49,16 @@ const adminRoutes    = require('./routes/adminRoutes');     // Phase 9
 const mfaRoutes      = require('./routes/mfaRoutes');       // Phase 11 
 const chatRoutes     = require('./routes/chatRoutes');      // Phase 12
 const paymentRoutes  = require('./routes/paymentRoutes');
+const walletRoutes   = require('./routes/walletRoutes');    // Task 1: Wallet & Payment
 const sellerRoutes = require('./routes/sellerRoutes');
+// Disabled category/productVariant routes for now (broken TS/runtime) to allow server startup
+// const categoryRoutes = require('./routes/categoryRoutes');  // Task 3: Categories
+const productVariantRoutes = require('./routes/productVariantRoutes');  // Task 3: Variants
+const notificationRoutes = require('./routes/notificationRoutes');  // Task 5: Notifications
+const disputeRoutes = require('./routes/disputeRoutes');  // Task 4: Disputes
+
+// WebSocket service
+const webSocketService = require('./services/webSocketService').default;
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -207,24 +216,48 @@ app.use('/uploads', express.static(
 ));
 
 // ── API Routes ────────────────────────────
-app.use('/api/auth',     authRoutes);
-app.use('/api/products', productRoutes);     // Phase 5
+// Helper: support both CommonJS (module.exports = router) and ES module default export
+const normalizeRouter = (r: any) => (r && r.default) ? r.default : r;
+
+app.use('/api/auth',     normalizeRouter(authRoutes));
+app.use('/api/products', normalizeRouter(productRoutes));     // Phase 5
+// Disabled categoryRoutes temporarily to allow dev server startup while debugging
+// app.use('/api/categories', normalizeRouter(categoryRoutes));  // Task 3: Categories
+// Disabled productVariantRoutes temporarily to allow dev server startup
+app.use('/api/variants', normalizeRouter(productVariantRoutes));  // Task 3: Variants
 
 // Dev-only: RBAC test harness (disable in production)
 if (process.env.NODE_ENV !== 'production') {
   const rbacTestRoutes = require('./routes/rbacTestRoutes');
-  app.use('/api/rbac-test', rbacTestRoutes);
+  app.use('/api/rbac-test', normalizeRouter(rbacTestRoutes));
   logger.info('🧪  RBAC test routes enabled (development only)');
+
+  // Development-only debug endpoints
+  app.post('/api/debug/notify', async (req: any, res: any) => {
+    try {
+      const { userId, title, message, link } = req.body || {};
+      if (!userId || !title) return res.status(400).json({ success: false, message: 'userId and title required' });
+      const notificationService = require('./services/notificationService').default;
+      const id = await notificationService.sendAlert(userId, title, message || '', link || '/');
+      return res.json({ success: true, id });
+    } catch (err) {
+      console.error('Debug notify failed', err);
+      return res.status(500).json({ success: false, message: 'Internal error' });
+    }
+  });
 }
-app.use('/api/orders',   orderRoutes);    // Phase 6
-app.use('/api/escrow',   escrowRoutes);   // Phase 7
-app.use('/api/reviews',  reviewRoutes);   // Phase 8
-app.use('/api/admin',    adminRoutes);    // Phase 9
-app.use('/api/mfa',      mfaRoutes);      // Phase 11
-app.use('/api/chat',     chatRoutes);     // Phase 12
-app.use('/api/payments', paymentRoutes);
-app.use('/api/seller',   sellerRoutes);
-app.use('/api/samples',  sampleRoutes);
+app.use('/api/orders',   normalizeRouter(orderRoutes));    // Phase 6
+app.use('/api/escrow',   normalizeRouter(escrowRoutes));   // Phase 7
+app.use('/api/reviews',  normalizeRouter(reviewRoutes));   // Phase 8
+app.use('/api/admin',    normalizeRouter(adminRoutes));    // Phase 9
+app.use('/api/mfa',      normalizeRouter(mfaRoutes));      // Phase 11
+app.use('/api/chat',     normalizeRouter(chatRoutes));     // Phase 12
+app.use('/api/payments', normalizeRouter(paymentRoutes));
+app.use('/api/wallet',   normalizeRouter(walletRoutes));   // Task 1: Wallet & Payment
+app.use('/api/seller',   normalizeRouter(sellerRoutes));
+app.use('/api/samples',  normalizeRouter(sampleRoutes));
+app.use('/api/disputes', normalizeRouter(disputeRoutes));  // Task 4: Disputes
+app.use('/api/notifications', normalizeRouter(notificationRoutes));  // Task 5: Notifications
 
 // ────────────────────────────────────────────
 // 7. 404 HANDLER
@@ -265,11 +298,14 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
 const startServer = async () => {
   await testConnection(); // fail fast if DB unreachable
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     logger.info(`🚀  O'Future API running on port ${PORT}`);
     logger.info(`📍  Environment: ${process.env.NODE_ENV || 'development'}`);
     logger.info(`🔗  Health check: http://localhost:${PORT}/health`);
   });
+
+  // Initialize WebSocket server
+  webSocketService.initializeIO(server);
 };
 
 startServer();

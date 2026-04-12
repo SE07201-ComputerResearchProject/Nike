@@ -1,6 +1,6 @@
 // ============================================================
-// O'Future Seller Dashboard - JavaScript
-// Đã tích hợp Logic Backend & Database chuẩn
+// O'Future Seller Dashboard - JavaScript (ENTERPRISE EDITION)
+// Đã tích hợp Logic Backend, Phân trang, Modal Động & Chart.js
 // ============================================================
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -15,6 +15,17 @@ let allDisputes = [];
 let allSamples = [];
 let activeRequests = 0;
 let editingProductId = null;
+
+// ── THÊM MỚI: Trạng thái Phân trang & Biểu đồ ──
+const pageState = {
+    products: { page: 1, limit: 10, totalPages: 1 },
+    orders:   { page: 1, limit: 10, totalPages: 1 },
+    escrow:   { page: 1, limit: 10, totalPages: 1 },
+    disputes: { page: 1, limit: 10, totalPages: 1 },
+    samples:  { page: 1, limit: 10, totalPages: 1 },
+    reviews:  { page: 1, limit: 10, totalPages: 1 }
+};
+let revenueChartInstance = null;
 
 // ============================================================
 // Authentication & Initialization
@@ -33,7 +44,7 @@ async function initializeDashboard() {
         currentUser = JSON.parse(user);
 
         // Check if user is seller
-        if (currentUser.role !== 'seller') {
+        if (currentUser.role !== 'seller' && currentUser.role !== 'admin') {
             alert('Only sellers can access this dashboard');
             window.location.href = '../index.html';
             return;
@@ -61,18 +72,16 @@ async function initializeDashboard() {
 // ============================================================
 
 async function apiCall(endpoint, options = {}) {
-    // Bật spinner loading của Seller Dashboard
     activeRequests += 1;
     showSpinner();
 
     try {
-        // Gọi qua fetchAPI trung tâm (api.js) để xử lý header và tự động đá về login nếu mất phiên
+        // Gọi qua fetchAPI trung tâm (api.js)
         return await fetchAPI(endpoint, options);
     } catch (error) {
         console.error('Seller API Error:', error);
         throw error;
     } finally {
-        // Tắt spinner khi hoàn thành
         activeRequests = Math.max(0, activeRequests - 1);
         if (activeRequests === 0) hideSpinner();
     }
@@ -89,93 +98,120 @@ function hideSpinner() {
 }
 
 // ============================================================
-// Data Loading Functions (Sử dụng Endpoint chuẩn Seller)
+// Data Loading Functions (CÓ PHÂN TRANG)
+// ============================================================
+
+// ============================================================
+// Data Loading Functions (CÓ PHÂN TRANG)
 // ============================================================
 
 async function loadDashboardData() {
     try {
-        // Load all data in parallel
-        await Promise.all([
-            loadProducts(),
-            loadOrders(),
-            loadEscrow(),
-            loadReviews(),
-            loadDisputes(),
-            loadSamples(),
-        ]);
-
+        // TẢI TUẦN TỰ: Đợi tải xong cái này mới tải cái kia
+        // Giúp Backend không bị ngộp (tránh lỗi 429 Rate Limit)
+        await loadProducts(1);
+        await loadOrders(1);
+        await loadEscrow(1);
+        await loadReviews(1);
+        await loadDisputes(1);
+        await loadSamples(1);
+        
         updateDashboardStats();
+        renderRevenueChart(); // Vẽ biểu đồ sau khi load xong
     } catch (error) {
         console.error('Error loading dashboard data:', error);
     }
 }
 
-async function loadProducts() {
+async function loadProducts(page = 1) {
     try {
-        // Sử dụng route chuẩn từ backend để lấy sản phẩm của chính seller
-        const response = await apiCall(`/products/seller/my?limit=100`);
+        pageState.products.page = page;
+        const response = await apiCall(`/products/seller/my?page=${page}&limit=${pageState.products.limit}`);
         allProducts = Array.isArray(response.data) ? response.data : [];
+        if(response.pagination) pageState.products.totalPages = response.pagination.totalPages;
+        
         renderProductsTable();
+        renderPagination('productsPagination', pageState.products, loadProducts);
     } catch (error) {
-        console.error('Error loading products:', error);
         document.getElementById('productsTableBody').innerHTML = `<tr><td colspan="5" class="text-center" style="color:red;">Error loading products: ${error.message}</td></tr>`;
     }
 }
 
-async function loadOrders() {
+async function loadOrders(page = 1) {
     try {
-        const response = await apiCall(`/seller/orders`);
+        pageState.orders.page = page;
+        const response = await apiCall(`/seller/orders?page=${page}&limit=${pageState.orders.limit}`);
         allOrders = response.data || [];
+        if(response.pagination) pageState.orders.totalPages = response.pagination.totalPages;
+        
         renderOrdersTable();
+        renderPagination('ordersPagination', pageState.orders, loadOrders);
+        if(page === 1) renderRevenueChart(); // Cập nhật biểu đồ nếu ở trang 1
     } catch (error) {
-        console.error('Error loading orders:', error);
         document.getElementById('ordersTableBody').innerHTML = `<tr><td colspan="6" class="text-center" style="color:red;">Error loading orders: ${error.message}</td></tr>`;
     }
 }
 
-async function loadEscrow() {
+async function loadEscrow(page = 1) {
     try {
-        const response = await apiCall(`/seller/escrow`);
+        pageState.escrow.page = page;
+        const response = await apiCall(`/seller/escrow?page=${page}&limit=${pageState.escrow.limit}`);
         allEscrow = response.data || [];
+        if(response.pagination) pageState.escrow.totalPages = response.pagination.totalPages;
+        
         renderEscrowTable();
+        renderPagination('escrowPagination', pageState.escrow, loadEscrow);
     } catch (error) {
-        console.error('Error loading escrow:', error);
         document.getElementById('escrowTableBody').innerHTML = `<tr><td colspan="6" class="text-center" style="color:red;">Error loading escrow: ${error.message}</td></tr>`;
     }
 }
 
-async function loadReviews() {
+async function loadReviews(page = 1) {
     try {
-        const response = await apiCall(`/seller/reviews`);
+        pageState.reviews.page = page;
+        const response = await apiCall(`/seller/reviews?page=${page}&limit=${pageState.reviews.limit}`);
         allReviews = response.data || [];
+        if(response.pagination) pageState.reviews.totalPages = response.pagination.totalPages;
+        
         renderReviews();
+        renderPagination('reviewsPagination', pageState.reviews, loadReviews);
     } catch (error) {
-        console.error('Error loading reviews:', error);
         document.getElementById('reviewsContainer').innerHTML = `<p class="text-center" style="color:red;">Error loading reviews: ${error.message}</p>`;
     }
 }
 
-async function loadDisputes() {
+async function loadDisputes(page = 1) {
     try {
-        const res = await apiCall(`/seller/disputes`);
+        pageState.disputes.page = page;
+        const res = await apiCall(`/seller/disputes?page=${page}&limit=${pageState.disputes.limit}`);
         allDisputes = res.data || [];
+        if(res.pagination) pageState.disputes.totalPages = res.pagination.totalPages;
+        
         const tbody = document.getElementById('disputesTableBody');
-        if (tbody) renderDisputesTable(tbody);
+        if (tbody) {
+            renderDisputesTable(tbody);
+            renderPagination('disputesPagination', pageState.disputes, loadDisputes);
+        }
     } catch (err) {
-        console.error('Error loading disputes', err);
         const tbody = document.getElementById('disputesTableBody');
         if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="color:red;">Error loading disputes: ${err.message}</td></tr>`;
     }
 }
 
-async function loadSamples() {
+async function loadSamples(page = 1) {
     try {
-        const res = await apiCall(`/seller/samples`);
+        pageState.samples.page = page;
+        const res = await apiCall(`/seller/samples?page=${page}&limit=${pageState.samples.limit}`);
         allSamples = res.data || [];
+        if(res.pagination) pageState.samples.totalPages = res.pagination.totalPages;
+        else pageState.samples.totalPages = 1; // Fallback
+        
         const tbody = document.getElementById('samplesTableBody');
-        if (tbody) renderSamplesTable(tbody);
+        if (tbody) {
+            renderSamplesTable(tbody);
+            renderPagination('samplesPagination', pageState.samples, loadSamples);
+        }
     } catch (err) {
-        console.error('Error loading samples', err);
         const tbody = document.getElementById('samplesTableBody');
         if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="color:red;">Error loading samples: ${err.message}</td></tr>`;
     }
@@ -190,17 +226,37 @@ function renderProductsTable(products = allProducts) {
     if (!tbody) return;
 
     if (!products || products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No products found. Click "Add New Product" to start.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No products found. Click "Add New Product" to start.</td></tr>';
         return;
     }
 
-    tbody.innerHTML = products.map(product => `
+    tbody.innerHTML = products.map(product => {
+        // --- FIX ẢNH SELLER TẠI ĐÂY ---
+        let imgUrl = '../../images/image.png';
+        if (product.imageUrls) {
+            try {
+                const parsedImgs = typeof product.imageUrls === 'string' ? JSON.parse(product.imageUrls) : product.imageUrls;
+                if (Array.isArray(parsedImgs) && parsedImgs.length > 0) {
+                    let rawUrl = parsedImgs[0];
+                    if (rawUrl.startsWith('/uploads')) {
+                        // Kênh người bán mặc định dùng backend 5000
+                        const backendBaseUrl = API_BASE_URL.replace('/api', ''); 
+                        imgUrl = `${backendBaseUrl}${rawUrl}`;
+                    } else {
+                        imgUrl = rawUrl;
+                    }
+                }
+            } catch(e){}
+        }
+
+        return `
         <tr>
+            <td><img src="${imgUrl}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px;"></td>
             <td>
                 <strong>${escapeHtml(product.name)}</strong><br>
                 <small style="color:#64748b;">${escapeHtml(product.category || 'General')}</small>
             </td>
-            <td>$${parseFloat(product.price || 0).toFixed(2)}</td>
+            <td>${parseInt(product.price || 0).toLocaleString('vi-VN')} đ</td>
             <td>${product.stockQuantity ?? product.stock_quantity ?? 0}</td>
             <td>
                 <span class="badge ${product.status === 'active' ? 'badge-success' : 'badge-warning'}">
@@ -212,7 +268,7 @@ function renderProductsTable(products = allProducts) {
                 <button class="btn btn-small btn-danger" onclick="deleteProduct('${product.id}')">Delete</button>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 
     addBadgeStyles();
 }
@@ -231,7 +287,7 @@ function renderOrdersTable() {
             <td>${order.id?.substring(0, 8).toUpperCase() || 'N/A'}</td>
             <td>${escapeHtml(order.buyer_username || order.buyerUsername || order.buyer?.username || 'Unknown')}</td>
             <td>${escapeHtml(order.product_name || order.productName || order.product?.name || 'Unknown')}</td>
-            <td>$${parseFloat(order.total_amount || order.totalAmount || 0).toFixed(2)}</td>
+            <td>${parseInt(order.total_amount || order.totalAmount || 0).toLocaleString('vi-VN')} đ</td>
             <td>
                 <span class="badge ${getStatusBadgeClass(order.status)}">
                     ${order.status || 'unknown'}
@@ -239,7 +295,7 @@ function renderOrdersTable() {
             </td>
             <td>
                 ${order.status === 'paid' 
-                    ? `<button class="btn btn-small btn-success" onclick="confirmShipping('${order.id}')">Confirm Shipping</button>` 
+                    ? `<button class="btn btn-small btn-success" onclick="shipOrder('${order.id}')">Confirm Shipping</button>` 
                     : '-'}
             </td>
         </tr>
@@ -265,9 +321,9 @@ function renderEscrowTable() {
         return `
         <tr>
             <td>${(escrow.order_id || '').substring(0, 8).toUpperCase() || 'N/A'}</td>
-            <td>$${gross.toFixed(2)}</td>
-            <td style="color:#ef4444;">-$${fee.toFixed(2)}</td>
-            <td style="font-weight:600;color:#10b981;">$${net.toFixed(2)}</td>
+            <td>${parseInt(gross).toLocaleString('vi-VN')} đ</td>
+            <td style="color:#ef4444;">-${parseInt(fee).toLocaleString('vi-VN')} đ</td>
+            <td style="font-weight:600;color:#10b981;">${parseInt(net).toLocaleString('vi-VN')} đ</td>
             <td>
                 <span class="badge ${getStatusBadgeClass(escrow.status)}">
                     ${escrow.status || 'unknown'}
@@ -295,7 +351,9 @@ function renderDisputesTable(tbody) {
             </td>
             <td><span class="badge ${getStatusBadgeClass(d.status)}">${d.status}</span></td>
             <td>
-                ${d.status === 'pending' ? `<span style="color:#f97316;font-size:13px;">Admin reviewing…</span>` : '—'}
+                ${d.status === 'pending' 
+                    ? `<button class="btn btn-small btn-warning" onclick="submitEvidence('${d.id}')">Submit Evidence</button>` 
+                    : '—'}
             </td>
         </tr>
     `).join('');
@@ -311,11 +369,12 @@ function renderSamplesTable(tbody) {
             <td>${(s.id || '').substring(0, 8).toUpperCase()}</td>
             <td>${escapeHtml(s.buyer_name || s.requestor?.username || 'Buyer')}</td>
             <td>${escapeHtml(s.product_name || s.product?.name || 'Product')}</td>
-            <td>$${parseFloat(s.deposit_amount || 0).toFixed(2)}</td>
+            <td>${parseInt(s.deposit_amount || 0).toLocaleString('vi-VN')} đ</td>
             <td><span class="badge ${getStatusBadgeClass(s.status)}">${s.status}</span></td>
             <td>
                 ${s.status === 'requested'
-                    ? `<button class="btn btn-small btn-primary" onclick="approveSample('${s.id}')">Approve</button>`
+                    ? `<button class="btn btn-small btn-primary" onclick="handleSample('${s.id}', 'approved')">Approve</button>
+                       <button class="btn btn-small btn-danger" onclick="handleSample('${s.id}', 'rejected')">Reject</button>`
                     : '—'}
             </td>
         </tr>
@@ -356,8 +415,8 @@ function renderReviews() {
 function updateDashboardStats() {
     const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
-    setEl('totalProducts', allProducts.length);
-    setEl('totalOrders', allOrders.length);
+    setEl('totalProducts', pageState.products.totalPages > 1 ? allProducts.length + '+' : allProducts.length);
+    setEl('totalOrders', pageState.orders.totalPages > 1 ? allOrders.length + '+' : allOrders.length);
 
     const netHeld = allEscrow
         .filter(e => e.status === 'held' || e.status === 'processing')
@@ -367,15 +426,69 @@ function updateDashboardStats() {
         .filter(e => e.status === 'released')
         .reduce((sum, e) => sum + parseFloat(e.net_amount || (parseFloat(e.amount) * 0.9) || 0), 0);
 
-    setEl('totalEscrow', `$${netHeld.toFixed(2)}`);
-    setEl('totalHeld', `$${netHeld.toFixed(2)}`);
-    setEl('totalReleased', `$${netReleased.toFixed(2)}`);
+    setEl('totalEscrow', `${parseInt(netHeld).toLocaleString('vi-VN')} đ`);
+    setEl('totalHeld', `${parseInt(netHeld).toLocaleString('vi-VN')} đ`);
+    setEl('totalReleased', `${parseInt(netReleased).toLocaleString('vi-VN')} đ`);
 
     const avgRating = allReviews.length > 0
         ? (allReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / allReviews.length).toFixed(1)
         : '0';
     setEl('avgRating', avgRating + (allReviews.length ? ' ⭐' : ''));
 }
+
+
+// ── THÊM MỚI: Helper Render Phân trang & Biểu đồ ──
+function renderPagination(containerId, stateObj, loadFunc) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (stateObj.totalPages <= 1) { container.innerHTML = ''; return; }
+
+    container.innerHTML = `
+        <div style="display:flex; justify-content:center; align-items:center; gap:15px; padding:15px; margin-top:10px;">
+            <button class="btn btn-small btn-secondary" ${stateObj.page <= 1 ? 'disabled' : ''} onclick="window.${loadFunc.name}(${stateObj.page - 1})">Prev</button>
+            <span style="font-size:13px; font-weight:bold; color:#475569;">Page ${stateObj.page} / ${stateObj.totalPages}</span>
+            <button class="btn btn-small btn-secondary" ${stateObj.page >= stateObj.totalPages ? 'disabled' : ''} onclick="window.${loadFunc.name}(${stateObj.page + 1})">Next</button>
+        </div>
+    `;
+    if(!window[loadFunc.name]) window[loadFunc.name] = loadFunc;
+}
+
+function renderRevenueChart() {
+    if (typeof Chart === 'undefined') return;
+    const ctx = document.getElementById('revenueChart');
+    if (!ctx) return;
+
+    // Tính toán giả lập từ danh sách đơn hàng trang hiện tại
+    const last7Days = Array.from({length: 7}, (_, i) => {
+        const d = new Date(); d.setDate(d.getDate() - (6 - i));
+        return d.toLocaleDateString('vi-VN');
+    });
+
+    const data = [0, 0, 0, 0, 0, 0, 0];
+    allOrders.forEach(o => {
+        const oDate = new Date(o.created_at || o.createdAt).toLocaleDateString('vi-VN');
+        const index = last7Days.indexOf(oDate);
+        if (index > -1 && o.status !== 'cancelled' && o.status !== 'refunded') {
+            data[index] += parseFloat(o.total_amount || o.totalAmount || 0);
+        }
+    });
+
+    if (revenueChartInstance) revenueChartInstance.destroy();
+    revenueChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: last7Days,
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: data,
+                backgroundColor: '#2563eb',
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
 
 // ============================================================
 // Action Functions
@@ -399,7 +512,7 @@ async function addProduct(e) {
     fd.append('name', name);
     fd.append('description', description);
     fd.append('price', price);
-    fd.append('stockQuantity', stock); // Đã update theo DB chuẩn
+    fd.append('stockQuantity', stock); 
     fd.append('category', category);
 
     if (imageInput.files && imageInput.files.length > 0) {
@@ -422,7 +535,7 @@ async function addProduct(e) {
 
         alert('Product saved successfully!');
         closeProductForm();
-        await loadProducts();
+        await loadProducts(pageState.products.page);
     } catch (error) {
         alert(`Failed to save product: ${error.message}`);
     } finally {
@@ -438,7 +551,7 @@ async function deleteProduct(productId) {
     try {
         await apiCall(`/products/${productId}`, { method: 'DELETE' });
         alert('Product deleted.');
-        await loadProducts();
+        await loadProducts(pageState.products.page);
     } catch (error) {
         alert('Error deleting product: ' + error.message);
     }
@@ -461,34 +574,63 @@ function editProduct(productId) {
     document.getElementById('addProductForm').style.display = 'flex';
 }
 
-// Chuyển sang POST /ship theo logic Database chuẩn
-async function confirmShipping(orderId) {
-    const ok = await showConfirm('Confirm this order has been shipped?');
-    if (!ok) return;
+// ── ĐÃ CẬP NHẬT: Dùng Multi-Prompt để nhập Mã Vận Đơn ──
+window.shipOrder = async function(orderId) {
+    const result = await showMultiPrompt('Shipping Information', [
+        { id: 'carrier', label: 'Carrier (e.g. UPS, FedEx, VNPost)', type: 'text', required: true },
+        { id: 'tracking', label: 'Tracking Number', type: 'text', required: true }
+    ]);
+
+    if (!result) return;
+
     try {
         await apiCall(`/orders/${orderId}/ship`, {
             method: 'POST',
-            body: JSON.stringify({ trackingNumber: '', carrier: '' }),
+            body: JSON.stringify({ trackingNumber: result.tracking, carrier: result.carrier }),
         });
         alert('Order marked as shipped!');
-        await loadOrders();
+        await loadOrders(pageState.orders.page);
     } catch (error) {
         alert(`Failed to update order: ${error.message}`);
     }
 }
 
-async function approveSample(sampleId) {
-    const ok = await showConfirm('Approve this sample request?');
+// ── THÊM MỚI: Nộp bằng chứng bảo vệ Dispute ──
+window.submitEvidence = async function(disputeId) {
+    const result = await showMultiPrompt('Submit Evidence for Dispute', [
+        { id: 'url', label: 'Image/Video URL (Google Drive, Imgur...)', type: 'url', required: true },
+        { id: 'desc', label: 'Detailed Explanation', type: 'text', required: true }
+    ]);
+
+    if (!result) return;
+
+    try {
+        await apiCall(`/disputes/${disputeId}/evidence`, {
+            method: 'POST',
+            body: JSON.stringify({ evidenceUrl: result.url, description: result.desc })
+        });
+        alert('Evidence submitted successfully. Pending Admin review.');
+        await loadDisputes(pageState.disputes.page);
+    } catch (error) {
+        alert(`Failed to submit evidence: ${error.message}`);
+    }
+}
+
+// ── ĐÃ CẬP NHẬT: Gộp chung Approve & Reject ──
+window.handleSample = async function(sampleId, status) {
+    const actionName = status === 'approved' ? 'Approve' : 'Reject';
+    const ok = await showConfirm(`Are you sure you want to ${actionName} this sample request?`);
     if (!ok) return;
+
     try {
         await apiCall(`/samples/${sampleId}/status`, {
             method: 'PUT',
-            body: JSON.stringify({ status: 'approved' }),
+            body: JSON.stringify({ status: status }),
         });
-        alert('Sample request approved!');
-        await loadSamples();
+        alert(`Sample request ${status}!`);
+        await loadSamples(pageState.samples.page);
     } catch (error) {
-        alert(`Failed to approve sample: ${error.message}`);
+        alert(`Failed to update sample: ${error.message}`);
     }
 }
 
@@ -510,51 +652,15 @@ async function sendReviewReply(reviewId) {
         });
         input.value = '';
         showReplyRow(reviewId);
-        await loadReviews();
+        await loadReviews(pageState.reviews.page);
         alert('Reply sent!');
     } catch (err) {
         alert('Error sending reply: ' + err.message);
     }
 }
 
-// Confirmation modal helper
-function showConfirm(message) {
-    return new Promise((resolve) => {
-        let modal = document.getElementById('confirmModal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'confirmModal';
-            modal.className = 'confirm-modal';
-            modal.innerHTML = `<div class="confirm-box" style="background:#fff; padding:20px; border-radius:8px; text-align:center;">
-                <div id="confirmMessage" style="margin-bottom:20px; font-weight:bold;"></div>
-                <div class="confirm-actions">
-                    <button id="confirmNo" class="btn btn-secondary" style="margin-right:10px;">No</button>
-                    <button id="confirmYes" class="btn btn-primary">Yes</button>
-                </div>
-            </div>`;
-            modal.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;";
-            document.body.appendChild(modal);
-        }
-
-        modal.querySelector('#confirmMessage').textContent = message;
-        modal.style.display = 'flex';
-
-        const clean = () => {
-            modal.style.display = 'none';
-            modal.querySelector('#confirmYes').removeEventListener('click', onYes);
-            modal.querySelector('#confirmNo').removeEventListener('click', onNo);
-        };
-
-        const onYes = () => { clean(); resolve(true); };
-        const onNo = () => { clean(); resolve(false); };
-
-        modal.querySelector('#confirmYes').addEventListener('click', onYes);
-        modal.querySelector('#confirmNo').addEventListener('click', onNo);
-    });
-}
-
 // ============================================================
-// Helper Functions
+// Helper Functions & Modal Engines
 // ============================================================
 
 function getStatusBadgeClass(status) {
@@ -622,12 +728,92 @@ function closeProductForm() {
     if(titleEl) titleEl.textContent = 'Add New Product';
 }
 
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        let modal = document.getElementById('confirmModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'confirmModal';
+            modal.className = 'confirm-modal';
+            modal.innerHTML = `<div class="confirm-box" style="background:#fff; padding:20px; border-radius:8px; text-align:center;">
+                <div id="confirmMessage" style="margin-bottom:20px; font-weight:bold;"></div>
+                <div class="confirm-actions">
+                    <button id="confirmNo" class="btn btn-secondary" style="margin-right:10px;">No</button>
+                    <button id="confirmYes" class="btn btn-primary">Yes</button>
+                </div>
+            </div>`;
+            modal.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;";
+            document.body.appendChild(modal);
+        }
+
+        modal.querySelector('#confirmMessage').textContent = message;
+        modal.style.display = 'flex';
+
+        const clean = () => {
+            modal.style.display = 'none';
+            modal.querySelector('#confirmYes').removeEventListener('click', onYes);
+            modal.querySelector('#confirmNo').removeEventListener('click', onNo);
+        };
+
+        const onYes = () => { clean(); resolve(true); };
+        const onNo = () => { clean(); resolve(false); };
+
+        modal.querySelector('#confirmYes').addEventListener('click', onYes);
+        modal.querySelector('#confirmNo').addEventListener('click', onNo);
+    });
+}
+
+// ── THÊM MỚI: Multi-Prompt Modal ──
+function showMultiPrompt(title, fields) {
+    return new Promise((resolve) => {
+        let modal = document.getElementById('dynamicMultiPrompt');
+        if (!modal) {
+            modal = document.createElement('div'); modal.id = 'dynamicMultiPrompt'; modal.className = 'confirm-modal';
+            document.body.appendChild(modal);
+        }
+
+        let inputsHtml = fields.map(f => `
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px; color:#475569;">${f.label}</label>
+                <input type="${f.type}" id="prompt_input_${f.id}" class="form-control" placeholder="Enter ${f.label.toLowerCase()}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e1;" ${f.required?'required':''}>
+            </div>
+        `).join('');
+
+        modal.innerHTML = `
+            <div style="background:#fff; width:400px; padding:25px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+                <h3 style="margin-bottom:20px; font-size:18px; color:#0f172a;">${title}</h3>
+                ${inputsHtml}
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:25px;">
+                    <button id="multiPromptCancel" class="btn btn-secondary">Cancel</button>
+                    <button id="multiPromptOk" class="btn btn-primary">Confirm</button>
+                </div>
+            </div>
+        `;
+        modal.style.cssText = "position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:9999; display:flex; align-items:center; justify-content:center;";
+
+        const okBtn = document.getElementById('multiPromptOk');
+        const cancelBtn = document.getElementById('multiPromptCancel');
+
+        const clean = () => { modal.style.display = 'none'; };
+        
+        okBtn.onclick = () => {
+            let result = {};
+            for(let f of fields) {
+                const val = document.getElementById(`prompt_input_${f.id}`).value.trim();
+                if(f.required && !val) return alert(`Required field: ${f.label}`);
+                result[f.id] = val;
+            }
+            clean(); resolve(result);
+        };
+        cancelBtn.onclick = () => { clean(); resolve(null); };
+    });
+}
+
 // ============================================================
 // Navigation & Events
 // ============================================================
 
 function setupEventListeners() {
-    // Menu items
     const menuItems = document.querySelectorAll('.menu-item');
     menuItems.forEach((item) => {
         item.addEventListener('click', (e) => {
@@ -637,7 +823,6 @@ function setupEventListeners() {
         });
     });
 
-    // Add product button
     const addBtn = document.getElementById('addProductBtn');
     if (addBtn) {
         addBtn.addEventListener('click', () => {
@@ -645,22 +830,23 @@ function setupEventListeners() {
         });
     }
 
-    // Product form submission
     const prodForm = document.getElementById('productForm');
     if (prodForm) prodForm.addEventListener('submit', addProduct);
 
-    // Product search
     const search = document.getElementById('productSearch');
     if (search) {
+        let timeout = null;
         search.addEventListener('input', (e) => {
-            const q = e.target.value.trim().toLowerCase();
-            if (!q) return renderProductsTable();
-            const filtered = allProducts.filter(p => (p.name||'').toLowerCase().includes(q));
-            renderProductsTable(filtered);
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                const q = e.target.value.trim().toLowerCase();
+                if (!q) return loadProducts(1);
+                const filtered = allProducts.filter(p => (p.name||'').toLowerCase().includes(q));
+                renderProductsTable(filtered);
+            }, 300);
         });
     }
 
-    // Close product form when clicking outside
     const formOverlay = document.getElementById('addProductForm');
     if (formOverlay) {
         formOverlay.addEventListener('click', (e) => {
@@ -670,7 +856,6 @@ function setupEventListeners() {
         });
     }
 
-    // Logout button
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {

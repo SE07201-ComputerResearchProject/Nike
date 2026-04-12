@@ -136,10 +136,31 @@ const register = async (req: AuthRequest, res: Response): Promise<any> => {
 // POST /api/auth/login
 // ─────────────────────────────────────────────
 const login = async (req: AuthRequest, res: Response): Promise<any> => {
-  const { email, password } = req.body;
+  // 1. Nhận thêm captchaToken từ Frontend gửi lên
+  const { email, password, captchaToken } = req.body;
   const ctx = reqContext(req);
 
   try {
+    // --- BẮT ĐẦU LỚP BẢO VỆ RECAPTCHA ---
+    if (!captchaToken) {
+      return res.status(400).json({ success: false, message: 'Vui lòng xác minh bạn không phải là robot.' });
+    }
+
+    // Đảm bảo bạn đã đặt biến RECAPTCHA_SECRET_KEY trong file .env
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY; 
+    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`;
+    
+    // Gọi API lên Google để kiểm chứng token
+    const googleRes = await fetch(verifyUrl, { method: 'POST' });
+    const googleData = await googleRes.json();
+
+    if (!googleData.success) {
+      await LogModel.write({ ...ctx, eventType: LOG_EVENTS.LOGIN_FAIL, severity: 'warn',
+        message: `Captcha verification failed for email: ${email}` });
+      return res.status(400).json({ success: false, message: 'Xác thực Captcha thất bại. Vui lòng thử lại!' });
+    }
+    // --- KẾT THÚC LỚP BẢO VỆ RECAPTCHA ---
+
     const user = await UserModel.findByEmail(email);
 
     if (!user) {
@@ -520,8 +541,10 @@ const googleLogin = async (req: AuthRequest, res: Response): Promise<any> => {
 
     let user = await UserModel.findByEmail(email);
     const ip = getClientIp(req);
+    let isNewUser = false;
 
     if (!user) {
+      isNewUser = true;
       const randomPassword = crypto.randomBytes(32).toString('hex'); 
       const passwordHash = await bcrypt.hash(randomPassword, SALT_ROUNDS);
       
@@ -591,6 +614,7 @@ const googleLogin = async (req: AuthRequest, res: Response): Promise<any> => {
       data    : {
         accessToken,
         refreshToken : rawRefresh,
+        isNewUser    : isNewUser,
         expiresIn    : process.env.JWT_EXPIRES_IN || '15m',
         user         : {
           id         : user.id,

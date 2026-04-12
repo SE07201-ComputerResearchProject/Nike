@@ -71,7 +71,8 @@ const verifyMfa = async (req: MfaRequest, res: Response): Promise<any> => {
       success: true, 
       data: { 
         accessToken: result.accessToken, 
-        refreshToken: result.refreshToken 
+        refreshToken: result.refreshToken,
+        user: result.user 
       } 
     });
   } catch (err) {

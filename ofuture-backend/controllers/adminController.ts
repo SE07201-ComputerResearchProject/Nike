@@ -490,6 +490,18 @@ const listAllProducts = async (req: AdminRequest, res: Response) => {
   }
 };
 
+const deleteProduct = async (req: AdminRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    await pool.execute(`UPDATE products SET status = 'deleted' WHERE id = ?`, [id]);
+    await LogModel.write({ ...ctx(req), eventType: 'PRODUCT_DELETED', severity: 'warn', message: `Admin deleted product ${id}` });
+    res.status(200).json({ success: true, message: 'Product deleted successfully.' });
+  } catch (err) {
+    logger.error('admin deleteProduct error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete product.' }); 
+  }
+};
+
 // ═════════════════════════════════════════════
 // D. ORDER OVERSIGHT
 // ═════════════════════════════════════════════
@@ -551,7 +563,7 @@ const listAllOrders = async (req: AdminRequest, res: Response) => {
 };
 
 // ═════════════════════════════════════════════
-// F. REVENUE REPORT
+// E. REVENUE REPORT
 // ═════════════════════════════════════════════
 
 const getRevenueReport = async (req: AdminRequest, res: Response) => {
@@ -645,6 +657,140 @@ const getRevenueReport = async (req: AdminRequest, res: Response) => {
     logger.error('getRevenueReport error:', err);
     res.status(500).json({ success: false, message: 'Failed to generate revenue report.' });
   }
+};
+
+// ═════════════════════════════════════════════
+// F. REVIEWS, ESCROW, PAYMENTS & AI (MỚI BỔ SUNG)
+// ═════════════════════════════════════════════
+
+const listAllReviews = async (req: AdminRequest, res: Response) => {
+  try {
+    const { page = '1', limit = '20' } = req.query;
+    const parsedPage  = Math.max(1, parseInt(page as string)  || 1);
+    const parsedLimit = Math.min(100, parseInt(limit as string) || 20);
+    const offset      = (parsedPage - 1) * parsedLimit;
+
+    const [rows]: any = await pool.execute(
+      `SELECT r.id, r.rating, r.body, r.is_hidden, u.username, p.name as product_name 
+       FROM reviews r JOIN users u ON u.id = r.buyer_id JOIN products p ON p.id = r.product_id 
+       ORDER BY r.created_at DESC LIMIT ? OFFSET ?`, [parsedLimit, offset]
+    );
+    const [[{ total }]]: any = await pool.execute(`SELECT COUNT(*) AS total FROM reviews`);
+    res.status(200).json({ success: true, data: rows, pagination: buildPagination(parsedPage, parsedLimit, Number(total)) });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to fetch reviews.' }); }
+};
+
+const hideReview = async (req: AdminRequest, res: Response) => {
+  try {
+    await pool.execute(`UPDATE reviews SET is_hidden = ? WHERE id = ?`, [req.body.is_hidden ? 1 : 0, req.params.id]);
+    res.status(200).json({ success: true, message: 'Review visibility updated.' });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to update review.' }); }
+};
+
+const listEscrow = async (req: AdminRequest, res: Response) => {
+  try {
+    const { page = '1', limit = '20', status } = req.query;
+    const parsedPage  = Math.max(1, parseInt(page as string)  || 1);
+    const parsedLimit = Math.min(100, parseInt(limit as string) || 20);
+    const offset      = (parsedPage - 1) * parsedLimit;
+
+    const where = status ? 'WHERE e.status = ?' : '';
+    const params = status ? [status, parsedLimit, offset] : [parsedLimit, offset];
+    
+    const [rows]: any = await pool.execute(
+      `SELECT e.id, e.amount, e.status, e.created_at, b.username AS buyer_username, s.username AS seller_username 
+       FROM escrow_transactions e JOIN orders o ON o.id = e.order_id 
+       JOIN users b ON b.id = o.buyer_id JOIN users s ON s.id = o.seller_id 
+       ${where} ORDER BY e.created_at DESC LIMIT ? OFFSET ?`, params
+    );
+    const [[{ total }]]: any = await pool.execute(`SELECT COUNT(*) AS total FROM escrow_transactions e ${where}`, status ? [status] : []);
+    
+    res.status(200).json({ 
+      success: true, 
+      data: rows.map((r:any) => ({
+        id: r.id, amount: r.amount, status: r.status, created_at: r.created_at, 
+        buyer: {username: r.buyer_username}, seller: {username: r.seller_username}
+      })), 
+      pagination: buildPagination(parsedPage, parsedLimit, Number(total)) 
+    });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to fetch escrow.' }); }
+};
+
+const resolveEscrowDispute = async (req: AdminRequest, res: Response) => {
+  try {
+    const { action } = req.body; 
+    const newStatus = action === 'release' ? 'released' : 'returned';
+    await pool.execute(`UPDATE escrow_transactions SET status = ? WHERE id = ?`, [newStatus, req.params.id]);
+    await LogModel.write({ ...ctx(req), eventType: 'ESCROW_RESOLVED', severity: 'info', message: `Admin resolved escrow ${req.params.id} via ${action}` });
+    res.status(200).json({ success: true, message: `Escrow has been ${newStatus}.` });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to resolve escrow.' }); }
+};
+
+const listPayments = async (req: AdminRequest, res: Response) => {
+  try {
+    const { page = '1', limit = '20', status } = req.query;
+    const parsedPage  = Math.max(1, parseInt(page as string)  || 1);
+    const parsedLimit = Math.min(100, parseInt(limit as string) || 20);
+    const offset      = (parsedPage - 1) * parsedLimit;
+
+    const [rows]: any = await pool.execute(`SELECT id, amount, status, gateway, created_at FROM payments ORDER BY created_at DESC LIMIT ? OFFSET ?`, [parsedLimit, offset]);
+    res.status(200).json({ success: true, data: rows, pagination: buildPagination(parsedPage, parsedLimit, 100) });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to fetch payments.' }); }
+};
+
+const updatePaymentStatus = async (req: AdminRequest, res: Response) => {
+  try {
+    const { action } = req.body;
+    await pool.execute(`UPDATE payments SET status = ? WHERE id = ?`, [action === 'approve' ? 'approved' : 'rejected', req.params.id]);
+    res.status(200).json({ success: true, message: `Payment ${action}d.` });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to update payment.' }); }
+};
+
+const listAiKnowledge = async (req: AdminRequest, res: Response) => {
+  try {
+    const [rows]: any = await pool.execute(`SELECT id, topic, content FROM ai_knowledge_base ORDER BY created_at DESC`);
+    res.status(200).json({ success: true, data: rows });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to fetch AI knowledge.' }); }
+};
+
+const addAiTopic = async (req: AdminRequest, res: Response) => {
+  try {
+    await pool.execute(`INSERT INTO ai_knowledge_base (id, topic, content) VALUES (UUID(), ?, ?)`, [req.body.topic, req.body.content]);
+    res.status(200).json({ success: true, message: 'Topic added.' });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to add topic.' }); }
+};
+
+const deleteAiTopic = async (req: AdminRequest, res: Response) => {
+  try {
+    await pool.execute(`DELETE FROM ai_knowledge_base WHERE id = ?`, [req.params.id]);
+    res.status(200).json({ success: true, message: 'Topic deleted.' });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to delete topic.' }); }
+};
+
+const listLiveChats = async (req: AdminRequest, res: Response) => {
+  try {
+    const [rows]: any = await pool.execute(`SELECT id, user_id, status FROM chat_sessions WHERE status = 'handoff_to_admin' ORDER BY updated_at DESC`);
+    res.status(200).json({ success: true, data: rows });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to fetch chats.' }); }
+};
+
+const getSystemSettings = async (req: AdminRequest, res: Response) => {
+  try {
+    const [rows]: any = await pool.execute(`SELECT setting_key, setting_value FROM system_settings`);
+    const settings = rows.reduce((acc: any, row: any) => ({ ...acc, [row.setting_key]: row.setting_value }), {});
+    res.status(200).json({ success: true, data: settings });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to fetch settings.' }); }
+};
+
+const updateSystemSettings = async (req: AdminRequest, res: Response) => {
+  try {
+    const { settings } = req.body;
+    for (const [key, value] of Object.entries(settings)) {
+      await pool.execute(`INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?`, [key, String(value), String(value)]);
+    }
+    await LogModel.write({ ...ctx(req), eventType: 'SETTINGS_UPDATED', severity: 'info', message: `Admin updated system settings` });
+    res.status(200).json({ success: true, message: 'Settings saved.' });
+  } catch (err) { res.status(500).json({ success: false, message: 'Failed to save settings.' }); }
 };
 
 // ═════════════════════════════════════════════
@@ -927,9 +1073,22 @@ export = {
   changeUserRole,
   deleteUser,
   listAllProducts,
+  deleteProduct,
   listAllOrders,
   getRevenueReport,
   getAuditLogs,
   getSuspiciousActivity,
   getSystemHealth,
+  listAllReviews,
+  hideReview,
+  listEscrow,
+  resolveEscrowDispute,
+  listPayments,
+  updatePaymentStatus,
+  listAiKnowledge,
+  addAiTopic,
+  deleteAiTopic,
+  listLiveChats,
+  getSystemSettings,
+  updateSystemSettings
 };

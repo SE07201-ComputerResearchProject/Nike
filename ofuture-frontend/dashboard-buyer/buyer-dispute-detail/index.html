@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chi tiết Tranh chấp | O'Future</title>
+  <link rel="stylesheet" href="../shared/buyer.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="../buyer-home/index.html">Dashboard</a>
+        <a href="../buyer-products/index.html">Sản phẩm</a>
+        <a href="../buyer-cart/index.html">Giỏ hàng</a>
+        <a href="../buyer-checkout/index.html">Thanh toán</a>
+        <a href="../buyer-orders/index.html">Đơn hàng</a>
+        <a class="active" href="../buyer-disputes/index.html">Tranh chấp</a>
+        <a href="../buyer-profile/index.html">Tài khoản</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <button class="btn btn-outline" onclick="window.history.back()" style="padding: 6px 12px; font-size: 14px;">← Quay lại</button>
+        <div class="top-actions">
+          <a href="../buyer-cart/index.html" class="cart-icon-wrapper" style="text-decoration: none; position: relative; margin-right: 15px; font-size: 24px;">
+            🛒 <span id="cartBadge" class="badge-cart">0</span>
+          </a>
+          <div class="avatar" id="headerAvatar">U</div>
+          <button id="logoutBtn" class="btn btn-outline">Đăng xuất</button>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Chi tiết Tranh chấp: <span id="disputeIdHeader">...</span></h1>
+        <p>Giao tiếp với người bán để giải quyết tranh chấp.</p>
+      </div>
+
+      <div class="dispute-detail-layout">
+        <!-- LEFT COLUMN: Dispute Info + Chat -->
+        <div class="dispute-detail-main">
+          <!-- Dispute Info Section -->
+          <div class="card dispute-info-card">
+            <div class="dispute-info-header">
+              <h2>Thông tin Tranh chấp</h2>
+              <div id="disputeStatusBadge" class="status-badge">...</div>
+            </div>
+            <p class="muted">Ngày tạo: <strong id="disputeDateCreated">...</strong></p>
+            
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Lý do tranh chấp</label>
+                <p id="disputeReason">...</p>
+              </div>
+              <div class="info-item">
+                <label>Trạng thái</label>
+                <p id="disputeStatus">...</p>
+              </div>
+              <div class="info-item">
+                <label>Người bán</label>
+                <p id="sellerName">...</p>
+              </div>
+              <div class="info-item">
+                <label>Mã Đơn hàng</label>
+                <p id="orderIdInfo">...</p>
+              </div>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <!-- Evidence Gallery -->
+            <h3>Bằng chứng</h3>
+            <div id="evidenceGallery" class="evidence-gallery">
+              <p class="muted">Đang tải bằng chứng...</p>
+            </div>
+          </div>
+
+          <!-- Chat Section -->
+          <div class="card chat-card">
+            <h2>Cuộc trò chuyện</h2>
+            <p class="muted">Giao tiếp với người bán để giải quyết tranh chấp</p>
+            
+            <div class="chat-messages-container" id="chatMessagesContainer">
+              <p class="muted">Đang tải tin nhắn...</p>
+            </div>
+
+            <div class="chat-pagination" id="chatPagination">
+              <button class="btn btn-outline" id="loadMoreBtn" style="width: 100%; display: none;">Tải tin nhắn cũ hơn</button>
+            </div>
+
+            <!-- Chat Input Form -->
+            <div class="chat-input-section">
+              <form id="sendMessageForm" class="chat-form">
+                <textarea 
+                  id="messageInput" 
+                  class="form-control" 
+                  rows="3" 
+                  placeholder="Nhập tin nhắn của bạn..." 
+                  required></textarea>
+                
+                <div class="chat-form-footer">
+                  <div class="attachment-preview" id="attachmentPreview"></div>
+                  <div class="chat-form-actions">
+                    <button type="button" class="btn btn-outline" id="attachButton" style="padding: 8px 12px;">📎 Đính kèm</button>
+                    <button type="submit" class="btn btn-primary" id="sendBtn">Gửi tin nhắn</button>
+                  </div>
+                </div>
+              </form>
+              <input type="file" id="fileInput" multiple style="display: none;">
+              <small class="muted">Ghi chú: Sử dụng đường dẫn URL cho tệp đính kèm. Tải tệp lên trước khi gửi.</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Summary -->
+        <div class="dispute-detail-summary card">
+          <h2>Tóm tắt Đơn hàng</h2>
+          
+          <div id="orderProductsSummary" class="products-list">
+            <p class="muted">Đang tải...</p>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-row">
+            <span>Tạm tính</span>
+            <strong id="subtotalPrice">0 đ</strong>
+          </div>
+          <div class="summary-row">
+            <span>Phí nền tảng (2.5%)</span>
+            <strong id="platformFee">0 đ</strong>
+          </div>
+          <div class="summary-row">
+            <span>Phí vận chuyển</span>
+            <strong id="shippingFee">0 đ</strong>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-row total">
+            <span>Tổng thanh toán</span>
+            <strong id="totalPrice" style="color: #e11d48; font-size: 24px;">0 đ</strong>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <h3>Lịch sử Tranh chấp</h3>
+          <div id="disputeTimeline" class="timeline">
+            <p class="muted">Đang tải...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- Evidence Preview Modal -->
+  <div id="evidenceModal" class="modal">
+    <div class="modal-content evidence-modal">
+      <div class="modal-header">
+        <h3>Xem Bằng chứng</h3>
+        <span class="close" onclick="closeEvidenceModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <img id="evidenceImage" src="" alt="Bằng chứng" style="max-width: 100%; max-height: 600px;">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeEvidenceModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/api.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

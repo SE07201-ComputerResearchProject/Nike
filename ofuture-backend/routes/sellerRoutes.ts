@@ -160,7 +160,7 @@ router.get('/disputes', async (req: SellerReq, res: Response) => {
 
     const [rows]: any = await pool.execute(
       `SELECT
-         d.id, d.order_id, d.reason, d.evidence_url,
+         d.id, d.order_id, d.reason, d.evidence_urls,
          d.status, d.created_at, d.resolved_at,
          o.total_amount,
          u.username AS complainant_username

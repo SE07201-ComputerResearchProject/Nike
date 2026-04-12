@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đánh giá Sản phẩm | O'Future</title>
+  <link rel="stylesheet" href="../shared/buyer.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="../buyer-home/index.html">Dashboard</a>
+        <a href="../buyer-products/index.html">Sản phẩm</a>
+        <a href="../buyer-cart/index.html">Giỏ hàng</a>
+        <a href="../buyer-checkout/index.html">Thanh toán</a>
+        <a href="../buyer-orders/index.html">Đơn hàng</a>
+        <a href="../buyer-disputes/index.html">Tranh chấp</a>
+        <a href="../buyer-profile/index.html">Tài khoản</a>
+        <a href="../buyer-contact/index.html">Hỗ trợ</a>
+        <a class="active" href="index.html">Đánh giá</a>
+        <a href="../buyer-wallet/index.html">Ví tiền</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <button class="btn btn-outline" onclick="window.history.back()" style="padding: 6px 12px; font-size: 14px;">← Quay lại Đơn hàng</button>
+        <div class="top-actions">
+          <div class="avatar" id="userAvatar">U</div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Đánh giá của tôi</h1>
+        <p>Chia sẻ trải nghiệm mua sỉ và quản lý các đánh giá bạn đã viết.</p>
+      </div>
+
+      <div class="review-layout">
+        <div class="review-form-container card" id="writeReviewSection" style="display: none; border-color: #4f46e5; border-width: 2px;">
+          <h2 style="margin-bottom: 8px; color: #4f46e5;">Viết đánh giá mới</h2>
+          <p class="muted" style="margin-bottom: 20px; font-size: 14px;">Đang đánh giá cho Đơn hàng: <strong id="displayOrderId" style="color:#0f172a;">...</strong></p>
+          
+          <form id="reviewForm">
+            <div class="form-group">
+              <label>Đánh giá của bạn *</label>
+              <div class="star-rating" id="starRating">
+                <span class="star" data-rating="1">★</span>
+                <span class="star" data-rating="2">★</span>
+                <span class="star" data-rating="3">★</span>
+                <span class="star" data-rating="4">★</span>
+                <span class="star" data-rating="5">★</span>
+              </div>
+              <input type="hidden" id="ratingValue" required>
+            </div>
+
+            <div class="form-group">
+              <label>Tiêu đề</label>
+              <input type="text" id="reviewTitle" class="form-control" placeholder="Tóm tắt đánh giá của bạn (VD: Hàng chất lượng tốt, giao nhanh)">
+            </div>
+
+            <div class="form-group">
+              <label>Nội dung chi tiết</label>
+              <textarea id="reviewBody" rows="4" class="form-control" placeholder="Chia sẻ thêm về chất lượng sản phẩm, đóng gói, dịch vụ..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+              <button type="submit" id="submitReviewBtn" class="btn btn-primary" style="flex: 1;">Gửi Đánh Giá</button>
+              <button type="button" class="btn btn-outline" onclick="cancelWriteReview()" style="flex: 1;">Hủy bỏ</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="my-reviews-container card">
+          <h2>Lịch sử Đánh giá</h2>
+          <div id="myReviewsList" class="reviews-list">
+            <p class="muted" style="text-align: center; padding: 40px;">Đang tải danh sách đánh giá...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="editReviewModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Chỉnh sửa Đánh giá</h3>
+        <span class="close" onclick="closeEditModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="editReviewForm">
+          <div class="form-group">
+            <label>Đánh giá *</label>
+            <div class="star-rating" id="editStarRating">
+              <span class="star" data-rating="1">★</span>
+              <span class="star" data-rating="2">★</span>
+              <span class="star" data-rating="3">★</span>
+              <span class="star" data-rating="4">★</span>
+              <span class="star" data-rating="5">★</span>
+            </div>
+            <input type="hidden" id="editRatingValue" required>
+          </div>
+          <div class="form-group">
+            <label>Tiêu đề</label>
+            <input type="text" id="editReviewTitle" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Nội dung chi tiết</label>
+            <textarea id="editReviewBody" rows="4" class="form-control"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeEditModal()">Hủy</button>
+        <button class="btn btn-primary" id="updateReviewBtn" onclick="submitEditReview()">Cập nhật</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="../shared/api.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

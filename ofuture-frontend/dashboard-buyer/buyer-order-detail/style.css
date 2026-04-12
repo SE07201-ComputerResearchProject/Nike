@@ -1,0 +1,159 @@
+/* Unique CSS for Order Detail Page (integrated with shared layout) */
+
+.order-detail-layout {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.order-detail-main h2, .order-detail-summary h2, .order-detail-main h3 {
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: #0f172a;
+}
+.order-detail-main h3 {
+    margin-top: 30px;
+}
+
+.order-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.status-badge.pending { background: #fef08a; color: #854d0e; }
+.status-badge.paid { background: #eff6ff; color: #1d4ed8; }
+.status-badge.shipped { background: #ffedd5; color: #c2410c; }
+.status-badge.completed { background: #dcfce7; color: #15803d; }
+.status-badge.cancelled { background: #fee2e2; color: #b91c1c; }
+.status-badge.refunded { background: #fee2e2; color: #b91c1c; }
+
+
+/* Timeline Styles (Reuse and integrate) */
+.order-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+}
+.timeline-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  position: relative;
+  z-index: 10;
+  margin-top: 6px; /* Align with text top */
+}
+.timeline-dot.active {
+    background: #4f46e5;
+}
+.timeline-line {
+  position: absolute;
+  left: 8px;
+  top: 16px;
+  width: 2px;
+  height: calc(100% + 16px);
+  background: #cbd5e1;
+  transform: translateX(-50%);
+  z-index: 5;
+}
+.timeline-line.active {
+    background: #4f46e5;
+}
+.timeline-content {
+    display: flex;
+    flex-direction: column;
+    color: #475569;
+}
+.timeline-title {
+    font-weight: 600;
+    color: #0f172a;
+}
+.timeline-date {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* Order Items styles */
+.order-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.summary-item-name {
+  font-weight: 500;
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.summary-item strong {
+  color: #e11d48;
+}
+
+
+/* Order Summary styles */
+.order-detail-summary {
+  position: sticky;
+  top: 24px;
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  color: #475569;
+}
+.summary-row strong {
+  color: #0f172a;
+}
+.summary-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 16px 0;
+}
+.badge-cart {
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: bold;
+}
+.status-badge.escrow-held { background: #ffedd5; color: #c2410c; }
+.status-badge.escrow-released { background: #dcfce7; color: #15803d; }
+.status-badge.escrow-returned { background: #fee2e2; color: #b91c1c; }
+.order-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+.shipping-address p { margin: 0; color: #475569;}

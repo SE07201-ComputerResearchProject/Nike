@@ -22,6 +22,7 @@ import ProductModel from '../models/productModel';
 import OrderModel from '../models/orderModel';
 import EscrowModel from '../models/escrowModel';
 import { LogModel, LOG_EVENTS } from '../models/logModel';
+import NotificationService from '../services/notificationService';
 import logger from '../utils/logger';
 
 interface OrderRequest extends Request {
@@ -384,6 +385,13 @@ const markShipped = async (req: OrderRequest, res: Response): Promise<any> => {
   const id = req.params.id as string;
   const { trackingNumber, carrier } = req.body;
 
+  if (!trackingNumber || !carrier) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Bắt buộc phải nhập Mã vận đơn (trackingNumber) và Đơn vị vận chuyển (carrier).' 
+    });
+  }
+
   try {
     const order: any = await OrderModel.findById(id);
 
@@ -483,6 +491,14 @@ const confirmDelivery = async (req: OrderRequest, res: Response): Promise<any> =
 
     await conn.commit();
 
+    // Notify seller that escrow has been released
+    NotificationService.notifyEscrowReleased({
+      orderId: id,
+      sellerId: order.seller_id,
+      productName: order.product_name,
+      amount: order.total_amount
+    }).catch(err => logger.error('Notification error:', err));
+
     await LogModel.write({
       ...ctx(req),
       eventType : LOG_EVENTS.ESCROW_RELEASED,
@@ -553,6 +569,17 @@ const adminUpdateStatus = async (req: OrderRequest, res: Response): Promise<any>
     }
 
     await OrderModel.updateStatus(id, status, { notes: reason });
+
+    // Notify buyer and seller of status change
+    NotificationService.notifyOrderStatusChange({
+      orderId: id,
+      buyerId: order.buyer_id,
+      sellerId: order.seller_id,
+      previousStatus: order.status,
+      newStatus: status,
+      productName: order.product_name,
+      totalAmount: order.total_amount
+    }).catch(err => logger.error('Notification error:', err));
 
     await LogModel.write({
       ...ctx(req),

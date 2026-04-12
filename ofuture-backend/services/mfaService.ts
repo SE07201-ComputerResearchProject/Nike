@@ -214,7 +214,15 @@ const exchangeMfaToken = async ({ mfaToken, code, codeType }: ExchangeMfaParams)
     success: true,
     accessToken,
     refreshToken,
-    mfaVerified: true
+    mfaVerified: true,
+    user: { // <--- BỔ SUNG THÔNG TIN USER VÀO ĐÂY
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      fullName: user.full_name,
+      mfaEnabled: true
+    }
   };
 };
 

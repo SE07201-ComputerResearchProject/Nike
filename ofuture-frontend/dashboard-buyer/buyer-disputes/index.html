@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý Tranh chấp | O'Future</title>
+  <link rel="stylesheet" href="../shared/buyer.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="../buyer-home/index.html">Dashboard</a>
+        <a href="../buyer-products/index.html">Sản phẩm</a>
+        <a href="../buyer-cart/index.html">Giỏ hàng</a>
+        <a href="../buyer-checkout/index.html">Thanh toán</a>
+        <a href="../buyer-orders/index.html">Đơn hàng</a>
+        <a class="active" href="index.html">Tranh chấp</a>
+        <a href="../buyer-profile/index.html">Tài khoản</a>
+        <a href="../buyer-contact/index.html">Hỗ trợ</a>
+        <a href="../buyer-reviews/index.html">Đánh giá</a>
+        <a href="../buyer-wallet/index.html">Ví tiền</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <button class="btn btn-outline" onclick="window.history.back()" style="padding: 6px 12px; font-size: 14px;">← Quay lại</button>
+        <div class="top-actions">
+          <a href="../buyer-cart/index.html" class="cart-icon-wrapper" style="text-decoration: none; position: relative; margin-right: 15px; font-size: 24px;">
+            🛒 <span id="cartBadge" class="badge-cart">0</span>
+          </a>
+          <div class="avatar" id="headerAvatar">U</div>
+          <button id="logoutBtn" class="btn btn-outline">Đăng xuất</button>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Quản lý Tranh chấp</h1>
+        <p>Xem tất cả các tranh chấp và giao tiếp để giải quyết.</p>
+      </div>
+
+      <div class="filters-container card">
+        <div class="tabs" id="statusTabs">
+          <button class="tab-btn active" data-status="all">Tất cả</button>
+          <button class="tab-btn" data-status="open">Đang mở</button>
+          <button class="tab-btn" data-status="in_progress">Đang xử lý</button>
+          <button class="tab-btn" data-status="resolved">Đã giải quyết</button>
+          <button class="tab-btn" data-status="closed">Đã đóng</button>
+        </div>
+      </div>
+
+      <div id="disputesContainer" class="disputes-list">
+        <p class="muted">Đang tải danh sách tranh chấp...</p>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="../shared/api.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

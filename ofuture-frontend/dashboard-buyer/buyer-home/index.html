@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buyer Dashboard | O'Future</title>
+  <link rel="stylesheet" href="../shared/buyer.css">
+  <link rel="stylesheet" href="../shared/notifications.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a class="active" href="index.html">Dashboard</a>
+        <a href="../buyer-products/index.html">Sản phẩm</a>
+        <a href="../buyer-cart/index.html">Giỏ hàng</a>
+        <a href="../buyer-checkout/index.html">Thanh toán</a>
+        <a href="../buyer-orders/index.html">Đơn hàng</a>
+        <a href="../buyer-disputes/index.html">Tranh chấp</a>
+        <a href="../buyer-profile/index.html">Tài khoản</a>
+        <a href="../buyer-contact/index.html">Hỗ trợ</a>
+        <a href="../buyer-reviews/index.html">Đánh giá</a>
+        <a href="../buyer-wallet/index.html">Ví tiền</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="search-box">
+          <input type="text" placeholder="Tìm kiếm...">
+        </div>
+        <div class="top-actions">
+          <a href="../buyer-cart/index.html" class="cart-icon-wrapper" style="text-decoration: none; position: relative; margin-right: 15px; font-size: 24px;">
+            🛒 <span id="cartBadge" style="position: absolute; top: -8px; right: -12px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px; font-weight: bold;">0</span>
+          </a>
+          <div class="avatar" id="userAvatar">U</div>
+          <button id="logoutBtn" class="btn btn-outline" style="padding: 6px 12px; font-size: 14px;">Đăng xuất</button>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1 id="welcomeText">Chào mừng trở lại!</h1>
+        <p>Khám phá các sản phẩm sỉ mới nhất hôm nay.</p>
+      </div>
+
+      <div class="grid grid-2">
+        <section class="card">
+          <h2 class="section-title">Thống kê mua hàng</h2>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; text-align: center;">
+              <h3 style="font-size: 24px; margin: 0; color: #4f46e5;">0</h3>
+              <p class="muted" style="margin: 5px 0 0;">Đơn hàng chờ xử lý</p>
+            </div>
+            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; text-align: center;">
+              <h3 style="font-size: 24px; margin: 0; color: #10b981;">0đ</h3>
+              <p class="muted" style="margin: 5px 0 0;">Đang ký quỹ (Escrow)</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="section-title">Sản phẩm nổi bật</h2>
+          <div id="featuredProducts" style="display: grid; gap: 15px;">
+            <p class="muted">Đang tải dữ liệu...</p>
+          </div>
+          <a href="../buyer-products/index.html" class="btn btn-outline" style="width: 100%; text-align: center; margin-top: 15px;">Xem tất cả sản phẩm</a>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="../shared/chat-widget.js"></script>
+  <script src="../shared/notifications.js"></script>
+  <script src="../shared/notification-visibility.js"></script>
+  <script src="../shared/ws-client.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -7,6 +7,7 @@
 
 import { Request, Response } from 'express';
 import escrowService from '../services/escrowService';
+import NotificationService from '../services/notificationService';
 import logger from '../utils/logger';
 import { pool } from '../config/db';
 
@@ -59,7 +60,6 @@ const pay = async (req: EscrowRequest, res: Response): Promise<any> => {
   }
 };
 
-// ─────────────────────────────────────────────
 // POST /api/escrow/release
 // ─────────────────────────────────────────────
 const release = async (req: EscrowRequest, res: Response): Promise<any> => {
@@ -85,6 +85,24 @@ const release = async (req: EscrowRequest, res: Response): Promise<any> => {
         code    : result.code,
         message : result.message,
       });
+    }
+
+    // Notify seller that escrow has been released
+    try {
+      const [[order]]: any = await pool.execute(
+        `SELECT seller_id, total_amount, product_name FROM orders WHERE id = ?`,
+        [orderId]
+      );
+      if (order) {
+        NotificationService.notifyEscrowReleased({
+          orderId,
+          sellerId: order.seller_id,
+          productName: order.product_name,
+          amount: order.total_amount
+        }).catch(err => logger.error('Notification error:', err));
+      }
+    } catch (notifyErr) {
+      logger.error('Failed to send release notification:', notifyErr);
     }
 
     res.status(200).json({ success: true, data: result });
@@ -123,6 +141,25 @@ const refund = async (req: EscrowRequest, res: Response): Promise<any> => {
         code    : result.code,
         message : result.message,
       });
+    }
+
+    // Notify buyer that escrow has been refunded
+    try {
+      const [[order]]: any = await pool.execute(
+        `SELECT buyer_id, total_amount, product_name FROM orders WHERE id = ?`,
+        [orderId]
+      );
+      if (order) {
+        NotificationService.notifyEscrowRefunded({
+          orderId,
+          buyerId: order.buyer_id,
+          productName: order.product_name,
+          amount: order.total_amount,
+          reason
+        }).catch(err => logger.error('Notification error:', err));
+      }
+    } catch (notifyErr) {
+      logger.error('Failed to send refund notification:', notifyErr);
     }
 
     res.status(200).json({ success: true, data: result });
@@ -292,4 +329,45 @@ const adminListAll = async (req: EscrowRequest, res: Response): Promise<any> => 
   }
 };
 
-export = { pay, release, refund, dispute, resolve, getStatus, adminListAll };
+// ─────────────────────────────────────────────
+// GET /api/escrow/seller (Lấy dòng tiền Ký quỹ của Seller)
+// ─────────────────────────────────────────────
+const getSellerEscrow = async (req: EscrowRequest, res: Response): Promise<any> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = (Math.max(1, page) - 1) * Math.min(100, limit);
+    const sellerId = req.user.id;
+
+    const [rows]: any = await pool.execute(
+      `SELECT e.*, o.status as order_status
+       FROM escrow_transactions e
+       JOIN orders o ON o.id = e.order_id
+       WHERE e.seller_id = ?
+       ORDER BY e.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [sellerId, Math.min(100, limit), offset]
+    );
+
+    const [[{ total }]]: any = await pool.execute(
+      `SELECT COUNT(*) AS total FROM escrow_transactions WHERE seller_id = ?`,
+      [sellerId]
+    );
+
+    res.status(200).json({
+      success: true,
+      data: rows,
+      pagination: {
+        page: Math.max(1, page),
+        limit: Math.min(100, limit),
+        total: Number(total),
+        totalPages: Math.ceil(Number(total) / Math.min(100, limit))
+      }
+    });
+  } catch (err) {
+    logger.error('getSellerEscrow error:', err);
+    res.status(500).json({ success: false, message: 'Lỗi tải lịch sử Ký quỹ.' });
+  }
+};
+
+export = { pay, release, refund, dispute, resolve, getStatus, adminListAll, getSellerEscrow };

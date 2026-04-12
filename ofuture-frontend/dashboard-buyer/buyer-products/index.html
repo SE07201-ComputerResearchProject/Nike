@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sản phẩm sỉ | O'Future</title>
+  <link rel="stylesheet" href="../shared/buyer.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">O'<span>Future</span></div>
+      <nav class="nav">
+        <a href="../buyer-home/index.html">Dashboard</a>
+        <a class="active" href="index.html">Sản phẩm</a>
+        <a href="../buyer-cart/index.html">Giỏ hàng</a>
+        <a href="../buyer-checkout/index.html">Thanh toán</a>
+        <a href="../buyer-orders/index.html">Đơn hàng</a>
+        <a href="../buyer-disputes/index.html">Tranh chấp</a>
+        <a href="../buyer-profile/index.html">Tài khoản</a>
+        <a href="../buyer-contact/index.html">Hỗ trợ</a>
+        <a href="../buyer-reviews/index.html">Đánh giá</a>
+        <a href="../buyer-wallet/index.html">Ví tiền</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm, danh mục...">
+        </div>
+        <div class="top-actions">
+          <a href="../buyer-cart/index.html" class="cart-icon-wrapper" style="text-decoration: none; position: relative; margin-right: 15px; font-size: 24px;">
+            🛒 <span id="cartBadge" style="position: absolute; top: -8px; right: -12px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px; font-weight: bold;">0</span>
+          </a>
+          <div class="avatar" id="userAvatar">U</div>
+          <button id="logoutBtn" class="btn btn-outline" style="padding: 6px 12px; font-size: 14px;">Đăng xuất</button>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <h1>Nguồn hàng sỉ nội địa</h1>
+        <p>Khám phá hàng ngàn sản phẩm trực tiếp từ nhà cung cấp với giá tốt nhất.</p>
+      </div>
+
+      <div class="filters-container card">
+        <div class="category-tabs" id="categoryTabs">
+          <button class="category-tab active" data-category="ALL">Tất cả</button>
+          <button class="category-tab" data-category="THOI_TRANG">Thời trang</button>
+          <button class="category-tab" data-category="DIEN_TU">Điện tử</button>
+          <button class="category-tab" data-category="GIA_DUNG">Gia dụng</button>
+          <button class="category-tab" data-category="KHAC">Khác</button>
+        </div>
+        <div class="sort-box">
+          <select id="sortSelect" class="form-control">
+            <option value="newest">Mới nhất</option>
+            <option value="price_asc">Giá: Thấp đến Cao</option>
+            <option value="price_desc">Giá: Cao đến Thấp</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="product-grid" id="productGrid">
+        <p class="muted">Đang tải sản phẩm...</p>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="../shared/api.js"></script>
+  <script src="../shared/chat-widget.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

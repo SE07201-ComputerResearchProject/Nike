@@ -6,7 +6,11 @@ const {
   createDispute,
   getMyDisputes,
   getAllDisputes,
-  resolveDispute
+  resolveDispute,
+  submitEvidence,
+  sendChatMessage,
+  getDisputeChat,
+  markChatAsRead
 } = require('../controllers/disputeController');
 
 const { authenticate } = require('../middleware/auth');
@@ -44,6 +48,13 @@ const validateResolveDispute = [
   validate
 ];
 
+const validateSubmitEvidence = [
+  param('id').isUUID().withMessage('Valid dispute ID is required.'),
+  body('evidenceUrl').isURL().withMessage('Evidence must be a valid URL.'),
+  body('description').optional().trim().escape(),
+  validate
+];
+
 // ─────────────────────────────────────────────
 // BUYER ROUTES
 // ─────────────────────────────────────────────
@@ -69,6 +80,20 @@ router.get(
 );
 
 // ─────────────────────────────────────────────
+// SHARED ROUTES (Buyer & Seller)
+// ─────────────────────────────────────────────
+// 2.5 Submit evidence for a dispute
+router.post(
+  '/:id/evidence',
+  authenticate,
+  riskScore,
+  authorizeRoles('buyer', 'seller'),
+  writeLimiter,
+  validateSubmitEvidence,
+  submitEvidence
+);
+
+// ─────────────────────────────────────────────
 // ADMIN ROUTES
 // ─────────────────────────────────────────────
 // 3. View all disputes (Admin)
@@ -89,6 +114,39 @@ router.post(
   writeLimiter,
   validateResolveDispute,
   resolveDispute
+);
+
+// ─────────────────────────────────────────────
+// DISPUTE CHAT ROUTES (NEW)
+// ─────────────────────────────────────────────
+// 5. Send chat message in dispute
+router.post(
+  '/:disputeId/chat',
+  authenticate,
+  riskScore,
+  authorizeRoles('buyer', 'seller'),
+  writeLimiter,
+  body('message').trim().isLength({ min: 1, max: 5000 }).withMessage('Message must be between 1 and 5000 characters.').escape(),
+  body('attachments').optional().isArray().withMessage('Attachments must be an array.'),
+  validate,
+  sendChatMessage
+);
+
+// 6. Get dispute chat history
+router.get(
+  '/:disputeId/chat',
+  authenticate,
+  authorizeRoles('buyer', 'seller', 'admin'),
+  validatePaginationQuery,
+  getDisputeChat
+);
+
+// 7. Mark chat as read
+router.put(
+  '/:disputeId/chat/read',
+  authenticate,
+  authorizeRoles('buyer', 'seller'),
+  markChatAsRead
 );
 
 export = router;

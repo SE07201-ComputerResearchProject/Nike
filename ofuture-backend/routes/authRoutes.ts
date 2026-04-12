@@ -59,25 +59,86 @@ const refreshLimiter = rateLimit({
 });
 
 
-// PUT /api/auth/profile  — update fullName + phone
+// PUT /api/auth/profile  — Hoàn thiện hồ sơ (Update users + user_profiles)
 router.put(
   '/profile',
   authenticate,
   [
     body('fullName').optional().trim().isLength({ min: 2, max: 150 }).escape(),
     body('phone').optional().isMobilePhone('any').withMessage('Invalid phone number.'),
+    body('role').optional().isIn(['buyer', 'seller']).withMessage('Role must be buyer or seller.'),
+    body('address').optional().trim().escape(),
+    body('city').optional().trim().escape(),
+    body('store_name').optional().trim().escape(),
+    body('category').optional().trim().escape(),
+    body('scale').optional().trim().escape(),
   ],
   async (req: any, res: Response): Promise<any> => {
-    const { fullName, phone } = req.body;
+    const { fullName, phone, role, address, city, store_name, category, scale } = req.body;
+    const userId = req.user.id;
+
+    // Lấy kết nối riêng để chạy Transaction (Đảm bảo ghi vào 2 bảng cùng lúc an toàn)
+    const connection = await pool.getConnection();
+
     try {
-      await UserModel.updateProfile(req.user.id, {
-        fullName : fullName ?? null,
-        phone    : phone    ?? null,
-        avatarUrl: null,
-      });
-      res.status(200).json({ success: true, message: 'Profile updated.' });
+      await connection.beginTransaction();
+
+      // ==========================================
+      // BƯỚC 1: CẬP NHẬT BẢNG `users` (Thông tin cốt lõi)
+      // ==========================================
+      const userUpdates: string[] = [];
+      const userValues: any[] = [];
+
+      if (fullName) { userUpdates.push('full_name = ?'); userValues.push(fullName); }
+      if (phone) { userUpdates.push('phone = ?'); userValues.push(phone); }
+      if (role) { userUpdates.push('role = ?'); userValues.push(role); }
+
+      if (userUpdates.length > 0) {
+        userValues.push(userId);
+        await connection.execute(
+          `UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`,
+          userValues
+        );
+      }
+
+      // ==========================================
+      // BƯỚC 2: CẬP NHẬT BẢNG `user_profiles` (Thông tin mở rộng)
+      // ==========================================
+      // Kỹ thuật UPSERT: Nếu chưa có profile thì INSERT, có rồi thì UPDATE
+      const profileSql = `
+        INSERT INTO user_profiles (user_id, address, city, store_name, category, scale)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          address = VALUES(address),
+          city = VALUES(city),
+          store_name = VALUES(store_name),
+          category = VALUES(category),
+          scale = VALUES(scale)
+      `;
+      
+      const profileValues = [
+        userId,
+        address || null,
+        city || null,
+        role === 'seller' ? (store_name || null) : null, // Chỉ lưu cửa hàng nếu là Seller
+        role === 'seller' ? (category || null) : null,
+        role === 'seller' ? (scale || 'small') : 'small'
+      ];
+
+      await connection.execute(profileSql, profileValues);
+
+      // Lưu giao dịch thành công
+      await connection.commit();
+      res.status(200).json({ success: true, message: 'Hồ sơ đã được cập nhật hoàn chỉnh.', data: { role } });
+
     } catch (err) {
-      res.status(500).json({ success: false, message: 'Update failed.' });
+      // Nếu có lỗi ở bất kỳ bước nào, hủy toàn bộ giao dịch (Không lưu nửa vời)
+      await connection.rollback();
+      console.error('Update profile transaction error:', err);
+      res.status(500).json({ success: false, message: 'Update failed due to server error.' });
+    } finally {
+      // Trả connection về pool
+      connection.release();
     }
   }
 );
