@@ -55,7 +55,7 @@ document.addEventListener('visibilitychange', () => {
 
 async function loadDisputes() {
   try {
-    const response = await fetchAPI('/disputes?role=buyer');
+    const response = await fetchAPI('/disputes/my');
     
     if (!response.success) {
       throw new Error(response.message || 'Lỗi tải danh sách tranh chấp');

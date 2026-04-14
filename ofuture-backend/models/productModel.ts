@@ -71,6 +71,10 @@ const ProductModel = {
     const conditions = ["p.status = ?"];
     const params: any[] = [status];
 
+    if (!sellerId) {
+      conditions.push('p.stock_quantity > 0');
+    }
+
     if (category) { conditions.push('p.category = ?');    params.push(category); }
     if (sellerId) { conditions.push('p.seller_id = ?');   params.push(sellerId); }
     if (minPrice) { conditions.push('p.price >= ?');      params.push(minPrice); }

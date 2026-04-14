@@ -11,6 +11,7 @@ import { body } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import UserModel from '../models/userModel';
 import { uploadImages } from '../middleware/upload';
+import { validationResult } from 'express-validator';
 import { pool } from '../config/db';
 const { register, login, refreshToken, logout, getMe, verifyEmail, resendOtp, googleLogin, uploadAvatar, getDevices, revokeDevice } = require('../controllers/authController');
 const { authenticate }     = require('../middleware/auth');
@@ -74,6 +75,11 @@ router.put(
     body('scale').optional().trim().escape(),
   ],
   async (req: any, res: Response): Promise<any> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
     const { fullName, phone, role, address, city, store_name, category, scale } = req.body;
     const userId = req.user.id;
 

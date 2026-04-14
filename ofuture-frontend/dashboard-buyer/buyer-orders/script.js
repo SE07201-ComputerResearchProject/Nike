@@ -74,8 +74,9 @@ function renderOrders() {
     }
 
     container.innerHTML = filtered.map(order => {
-        const amount = order.totalAmount || order.total_amount || order.depositAmount || order.deposit_amount || 0;
-        const dateStr = new Date(order.created_at || order.requested_at).toLocaleString('vi-VN');
+        // Fix 1: Thêm tổng hợp nhiều trường hợp tên biến trả về từ API (thêm total_price) và dùng Number() an toàn hơn
+        const amount = order.totalAmount || order.total_amount || order.total_price || order.depositAmount || order.deposit_amount || 0;
+        const dateStr = new Date(order.createdAt || order.created_at || order.requested_at).toLocaleString('vi-VN');
         const badgeInfo = getStatusBadge(order.status);
         
         return `
@@ -89,12 +90,12 @@ function renderOrders() {
                 </div>
                 <div class="order-body">
                     <div class="order-info">
-                        <p>ID Sản phẩm: ${order.product_id}</p>
+                        <p>ID Sản phẩm: ${order.product_id || 'N/A'}</p>
                         ${order.quantity ? `<p>Số lượng: ${order.quantity}</p>` : ''}
                     </div>
                     <div style="text-align: right;">
                         <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Tổng tiền</p>
-                        <div class="order-total">${parseInt(amount).toLocaleString('vi-VN')} đ</div>
+                        <div class="order-total">${Number(amount).toLocaleString('vi-VN')} đ</div>
                     </div>
                 </div>
                 <div class="order-actions">
@@ -120,17 +121,21 @@ function getStatusBadge(status) {
 // Render Nút bấm thông minh theo trạng thái
 function generateActionButtons(order) {
     let btns = '';
+    const id = order.id || order.sample_id;
+    const amount = order.totalAmount || order.total_amount || order.total_price || order.depositAmount || order.deposit_amount || 0;
+    
+    // Fix 2: Luôn hiển thị nút "Xem chi tiết" bất kể trạng thái nào
+    btns += `<button class="btn btn-outline" onclick="window.location.href='../buyer-order-detail/index.html?id=${id}'">👁️ Xem chi tiết</button>`;
     
     if (order.status === 'pending') {
-    const amount = order.totalAmount || order.total_amount || order.depositAmount || order.deposit_amount || 0;
-    btns += `<button class="btn btn-primary" onclick="window.location.href='../buyer-checkout/index.html?orderId=${order.id || order.sample_id}&amount=${amount}'">💳 Thanh toán ngay</button>`;
+        btns += `<button class="btn btn-primary" onclick="window.location.href='../buyer-checkout/index.html?orderId=${id}&amount=${amount}'">💳 Thanh toán ngay</button>`;
     }
     else if (order.status === 'shipped') {
-        btns += `<button class="btn btn-primary" onclick="confirmDelivery('${order.id}')">✅ Đã nhận được hàng (Giải ngân)</button>`;
-        btns += `<button class="btn btn-outline" style="color: #ef4444; border-color: #ef4444;" onclick="openDisputeModal('${order.id}')">⚠️ Hàng lỗi / Khiếu nại</button>`;
+        btns += `<button class="btn btn-primary" onclick="confirmDelivery('${id}')">✅ Đã nhận được hàng (Giải ngân)</button>`;
+        btns += `<button class="btn btn-outline" style="color: #ef4444; border-color: #ef4444;" onclick="openDisputeModal('${id}')">⚠️ Hàng lỗi / Khiếu nại</button>`;
     } 
     else if (order.status === 'completed') {
-        btns += `<button class="btn btn-outline" onclick="window.location.href='../buyer-reviews/index.html?orderId=${order.id}'">⭐ Đánh giá sản phẩm</button>`;
+        btns += `<button class="btn btn-outline" onclick="window.location.href='../buyer-reviews/index.html?orderId=${id}'">⭐ Đánh giá sản phẩm</button>`;
     }
     
     return btns;

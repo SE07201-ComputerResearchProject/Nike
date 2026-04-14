@@ -70,3 +70,217 @@
     border-color: #3b82f6; background-color: #fff;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); outline: none;
 }
+
+/* === [NEW] CSS cho Modal Tắt MFA === */
+
+/* Tái sử dụng lớp modal cơ bản của bạn và bổ sung thêm */
+.modal-content.modal-mfa-disable {
+    max-width: 480px; /* Nhỏ gọn hơn modal sản phẩm */
+    border-radius: 12px;
+    padding: 30px;
+    border-top: 4px solid #dc3545; /* Màu đỏ cảnh báo */
+}
+
+.mfa-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    color: #dc3545;
+}
+
+.mfa-header i {
+    font-size: 2rem;
+}
+
+.mfa-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.mfa-warning {
+    background-color: #fff3f3;
+    border-left: 4px solid #dc3545;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 25px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.required {
+    color: #dc3545;
+}
+
+/* Kiểu riêng cho ô nhập mã OTP */
+.code-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.code-input-container input#disableMfaCode {
+    font-family: 'Courier New', Courier, monospace; /* Font chữ dễ đọc mã */
+    font-size: 1.3rem;
+    letter-spacing: 5px; /* Giãn cách chữ để dễ nhìn mã 6 số */
+    text-align: center;
+    padding-left: 10px;
+    font-weight: bold;
+}
+
+.code-input-container i {
+    position: absolute;
+    right: 15px;
+    color: var(--text-muted);
+}
+
+.mfa-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.mfa-actions .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #dc3545; /* Màu đỏ cho hành động tắt */
+}
+
+.mfa-actions .btn-primary:hover {
+    background-color: #c82333;
+}
+
+/* Làm đẹp ô nhập mật khẩu */
+#disableMfaPassword {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 1rem;
+    margin-top: 8px;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+#disableMfaPassword:focus {
+    outline: none;
+    border-color: #dc3545; /* Đỏ cảnh báo */
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+/* Làm đẹp ô nhập mã Code 6 số */
+.code-input-container {
+    position: relative;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.code-input-container input#disableMfaCode {
+    width: 100%;
+    padding: 14px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 1.6rem;
+    letter-spacing: 12px; /* Tách xa các số ra nhìn cho chuyên nghiệp giống Momo/Bank */
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 700;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    background-color: #f8fafc;
+}
+
+.code-input-container input#disableMfaCode:focus {
+    outline: none;
+    border-color: #dc3545;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+/* Căn chỉnh Icon chìa khóa (nếu có dùng) */
+.code-input-container i {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 1.2rem;
+}
+
+.password-requirements {
+    list-style: none; padding: 0; margin-top: 10px; font-size: 12px;
+}
+.password-requirements li { color: #94a3b8; transition: 0.3s; }
+.password-requirements li::before { content: '○ '; }
+.password-requirements li.met { color: #10b981; font-weight: bold; }
+.password-requirements li.met::before { content: '● '; }
+
+.badge-current {
+    background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px;
+}
+.ip-highlight { color: #4f46e5; font-weight: 600; }
+
+/* =========================================
+   UI MẬT KHẨU (Khung & Con mắt)
+========================================= */
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-input-wrapper input {
+    width: 100%;
+    padding: 12px 15px; /* Kích thước chuẩn O'Future */
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box; /* Đảm bảo padding không làm ô to ra */
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.password-input-wrapper input:focus {
+    outline: none;
+    border-color: #4f46e5; /* Viền xanh khi bấm vào */
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.password-input-wrapper .toggle-eye {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 1.1rem;
+    padding: 5px; /* Giúp dễ click hơn */
+}
+
+.password-input-wrapper .toggle-eye:hover {
+    color: #4f46e5;
+}
+
+/* =========================================
+   TRẠNG THÁI TRÙNG KHỚP
+========================================= */
+.password-match-status {
+    font-size: 0.85rem;
+    margin-top: 6px;
+    margin-bottom: 0;
+    font-weight: 500;
+    min-height: 20px; /* Tránh form bị giật lên xuống khi chữ xuất hiện/biến mất */
+}
+
+.password-match-status.match {
+    color: #10b981; /* Xanh lá */
+}
+
+.password-match-status.mismatch {
+    color: #ef4444; /* Đỏ */
+}

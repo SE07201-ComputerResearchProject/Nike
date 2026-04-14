@@ -24,6 +24,7 @@ import EscrowModel from '../models/escrowModel';
 import { LogModel, LOG_EVENTS } from '../models/logModel';
 import NotificationService from '../services/notificationService';
 import logger from '../utils/logger';
+import orderService from '../services/orderService';
 
 interface OrderRequest extends Request {
   user?: any;
@@ -66,136 +67,121 @@ const canTransition = (from: string, to: string) =>
 // Entire flow is wrapped in a DB transaction.
 // ─────────────────────────────────────────────
 const createOrder = async (req: OrderRequest, res: Response): Promise<any> => {
-  const { productId, quantity, shippingAddress, notes } = req.body;
+  // Thay đổi: Nhận mảng items [{ productId, quantity }] thay vì 1 productId
+  const { items, shippingAddress, notes } = req.body;
   const buyerId = req.user.id;
 
-  // Acquire a connection for the transaction
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ success: false, message: 'Cart items are required.' });
+  }
+
   const conn: any = await pool.getConnection();
 
   try {
     await conn.beginTransaction();
 
-    // ── 1. Lock the product row against concurrent orders ──
-    const [productRows]: any = await conn.execute(
-      `SELECT id, seller_id, name, price, stock_quantity, status
-       FROM products
-       WHERE id = ? AND status = 'active'
-       FOR UPDATE`,           // row-level lock held until COMMIT/ROLLBACK
-      [productId]
-    );
+    let totalAmount = 0;
+    let sellerId = null;
+    const orderItemsToInsert = [];
 
-    const product = productRows[0];
+    // 1. Duyệt qua từng sản phẩm để lấy thông tin, khóa dòng (FOR UPDATE) và kiểm tra stock
+    for (const item of items) {
+      const [productRows]: any = await conn.execute(
+        `SELECT id, seller_id, name, price, stock_quantity, status
+         FROM products WHERE id = ? AND status = 'active' FOR UPDATE`,
+        [item.productId]
+      );
 
-    if (!product) {
-      await conn.rollback();
-      return res.status(404).json({
-        success : false,
-        message : 'Product not found or no longer available.',
+      const product = productRows[0];
+
+      if (!product) {
+        throw new Error(`Sản phẩm ${item.productId} không tồn tại hoặc đã ngừng bán.`);
+      }
+      if (product.seller_id === buyerId) {
+        throw new Error(`Bạn không thể mua sản phẩm của chính mình (${product.name}).`);
+      }
+      if (product.stock_quantity < item.quantity) {
+        throw new Error(`Sản phẩm "${product.name}" không đủ số lượng (Còn: ${product.stock_quantity}).`);
+      }
+
+      // Xác định seller (Tất cả items trong 1 order phải cùng 1 seller)
+      if (!sellerId) sellerId = product.seller_id;
+      else if (sellerId !== product.seller_id) {
+        throw new Error('Tất cả sản phẩm trong một đơn hàng phải thuộc cùng 1 người bán.');
+      }
+
+      const unitPrice = parseFloat(product.price);
+      const subtotal = parseFloat((unitPrice * item.quantity).toFixed(2));
+      totalAmount += subtotal;
+
+      // Chuẩn bị dữ liệu cho order_items
+      orderItemsToInsert.push({
+        product_id: product.id,
+        quantity: item.quantity,
+        unit_price: unitPrice,
+        subtotal: subtotal
       });
+
+      // 2. Trừ stock ngay lập tức
+      await conn.execute(
+        `UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?`,
+        [item.quantity, product.id]
+      );
     }
 
-    // ── 2. Prevent buyer purchasing their own product ──────
-    if (product.seller_id === buyerId) {
-      await conn.rollback();
-      return res.status(400).json({
-        success : false,
-        message : 'You cannot purchase your own product.',
-      });
-    }
+    // 3. Tạo Đơn Hàng (Bảng orders) - KHÔNG còn product_id
+    const orderId = require('crypto').randomUUID();
+    const shippingFee = req.body.shippingFee || 0;
+    const discountAmount = req.body.discountAmount || 0;
+    const finalTotalAmount = totalAmount + shippingFee - discountAmount;
 
-    // ── 3. Stock check ─────────────────────────────────────
-    if (product.stock_quantity < quantity) {
-      await conn.rollback();
-      return res.status(409).json({
-        success  : false,
-        message  : `Insufficient stock. Available: ${product.stock_quantity}, requested: ${quantity}.`,
-        available: product.stock_quantity,
-      });
-    }
-
-    // ── 4. Calculate totals ────────────────────────────────
-    const unitPrice   = parseFloat(product.price);
-    const totalAmount = parseFloat((unitPrice * quantity).toFixed(2));
-
-    // ── 5. Decrement stock atomically ──────────────────────
     await conn.execute(
-      `UPDATE products
-       SET stock_quantity = stock_quantity - ?
-       WHERE id = ? AND stock_quantity >= ?`,
-      [quantity, productId, quantity]
-    );
-
-    // ── 6. Insert order ────────────────────────────────────
-    const [orderResult]: any = await conn.execute(
-      `INSERT INTO orders
-         (buyer_id, seller_id, product_id, quantity,
-          unit_price, total_amount, shipping_address, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO orders 
+         (id, buyer_id, seller_id, total_amount, shipping_fee, discount_amount, final_total_amount, shipping_address, notes, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
       [
-        buyerId,
-        product.seller_id,
-        productId,
-        quantity,
-        unitPrice,
-        totalAmount,
-        JSON.stringify(shippingAddress),
-        notes ?? null,
+        orderId, buyerId, sellerId, totalAmount, shippingFee, discountAmount, finalTotalAmount,
+        JSON.stringify(shippingAddress), notes ?? null
       ]
     );
 
-    // ── 7. Fetch the new order UUID ────────────────────────
-    const [[newOrderRow]]: any = await conn.execute(
-      'SELECT id FROM orders WHERE buyer_id = ? AND product_id = ? ORDER BY created_at DESC LIMIT 1',
-      [buyerId, productId]
-    );
-    const orderId = newOrderRow.id;
+    // 4. Tạo chi tiết đơn hàng (Bảng order_items)
+    for (const oi of orderItemsToInsert) {
+      const itemId = require('crypto').randomUUID();
+      await conn.execute(
+        `INSERT INTO order_items (id, order_id, product_id, quantity, unit_price, subtotal)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [itemId, orderId, oi.product_id, oi.quantity, oi.unit_price, oi.subtotal]
+      );
+    }
 
-    // ── 8. Create a PENDING escrow record ─────────────────
-    // Money not yet held — escrow moves to "held" when buyer pays (Phase 7).
-    const platformFee = parseFloat((totalAmount * 0.025).toFixed(2));
-    const netAmount   = parseFloat((totalAmount - platformFee).toFixed(2));
+    // 5. Tạo Ký Quỹ (Escrow) CHỈ 1 ROW CHO TOÀN BỘ ĐƠN HÀNG
+    const platformFee = parseFloat((finalTotalAmount * 0.025).toFixed(2));
+    const netAmount = parseFloat((finalTotalAmount - platformFee).toFixed(2));
 
     await conn.execute(
       `INSERT INTO escrow_transactions
          (order_id, buyer_id, seller_id, amount, platform_fee, net_amount, status)
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [orderId, buyerId, product.seller_id, totalAmount, platformFee, netAmount]
+      [orderId, buyerId, sellerId, finalTotalAmount, platformFee, netAmount]
     );
 
-    // ── 9. COMMIT ──────────────────────────────────────────
     await conn.commit();
 
-    // ── 10. Audit log ──────────────────────────────────────
-    await LogModel.write({
-      ...ctx(req),
-      eventType : LOG_EVENTS.ORDER_CREATED,
-      severity  : 'info',
-      message   : `Order created: id=${orderId} product="${product.name}" qty=${quantity} total=${totalAmount}`,
-      payload   : { orderId, productId, quantity, totalAmount },
-    });
-
-    logger.info(`Order created: id=${orderId} buyer=${buyerId}`);
-
     res.status(201).json({
-      success : true,
-      message : 'Order placed successfully. Please proceed to payment.',
-      data    : {
+      success: true,
+      message: 'Đơn hàng đã được tạo thành công.',
+      data: {
         orderId,
-        productName  : product.name,
-        quantity,
-        unitPrice,
         totalAmount,
-        platformFee,
-        netToSeller : netAmount,
-        status       : 'pending',
-        nextStep     : 'POST /api/escrow/pay to complete payment and lock funds in escrow.',
-      },
+        finalTotalAmount,
+        status: 'pending'
+      }
     });
 
-  } catch (err) {
+  } catch (err: any) {
     await conn.rollback();
-    logger.error('createOrder transaction error:', err);
-    res.status(500).json({ success: false, message: 'Order placement failed. Please try again.' });
+    res.status(400).json({ success: false, message: err.message || 'Lỗi khi tạo đơn hàng.' });
   } finally {
     conn.release();
   }
@@ -235,7 +221,7 @@ const getMyOrders = async (req: OrderRequest, res: Response): Promise<any> => {
 const getOrderById = async (req: OrderRequest, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
-    const order = await OrderModel.findById(id);
+    const order = await orderService.getOrderWithDetails(id);
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
@@ -338,11 +324,17 @@ const cancelOrder = async (req: OrderRequest, res: Response): Promise<any> => {
       [reason ?? null, id]
     );
 
-    // Restore stock
-    await conn.execute(
-      'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
-      [order.quantity, order.product_id]
+    // Restore stock cho tất cả các item trong đơn hàng
+    const [orderItems]: any = await conn.execute(
+      'SELECT product_id, quantity FROM order_items WHERE order_id = ?',
+      [id]
     );
+    for (const item of orderItems) {
+      await conn.execute(
+        'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
+        [item.quantity, item.product_id]
+      );
+    }
 
     // Mark escrow for refund (if it was held)
     await conn.execute(
@@ -491,12 +483,17 @@ const confirmDelivery = async (req: OrderRequest, res: Response): Promise<any> =
 
     await conn.commit();
 
+    const [[firstItem]]: any = await conn.execute(
+      'SELECT p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ? LIMIT 1',
+      [id]
+    );
+
     // Notify seller that escrow has been released
     NotificationService.notifyEscrowReleased({
       orderId: id,
       sellerId: order.seller_id,
-      productName: order.product_name,
-      amount: order.total_amount
+      productName: firstItem ? firstItem.name : 'Đơn hàng của bạn', // Đã sửa
+      amount: order.final_total_amount || order.total_amount
     }).catch(err => logger.error('Notification error:', err));
 
     await LogModel.write({

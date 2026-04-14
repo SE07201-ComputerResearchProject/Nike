@@ -28,7 +28,7 @@ async function fetchAPI(endpoint, options = {}) {
     const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
-    });
+    }); 
 
     // ── XỬ LÝ LỖI 401 (Mất Session / Token hết hạn) ──
     if (response.status === 401) {
@@ -36,14 +36,10 @@ async function fetchAPI(endpoint, options = {}) {
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       
-      // Tính toán đường dẫn lùi cấp nếu file đang nằm trong dashboard 
-      const currentPath = window.location.pathname;
-      const isInsideSubFolder = currentPath.includes('/dashboard-');
-      // Trỏ thẳng về file login.html ở thư mục gốc
-      const loginPath = isInsideSubFolder ? '../login.html' : 'login.html';
+      const basePath = window.location.pathname.includes('ofuture-frontend') ? '/ofuture-frontend' : '';
       
       alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
-      window.location.href = loginPath;
+      window.location.href = `${basePath}/login.html`;
       throw new Error('Unauthorized');
     }
 

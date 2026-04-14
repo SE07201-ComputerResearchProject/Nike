@@ -92,17 +92,100 @@ a { text-decoration: none; color: inherit; }
   box-shadow: var(--shadow-soft);
   border: 1px solid var(--border);
 }
+
+/* General Buttons - Thêm hiệu ứng và căn chỉnh */
 .btn {
   padding: 10px 20px;
-  border-radius: 10px;
+  border-radius: 8px; /* Bo góc vừa phải, hiện đại hơn */
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease; /* Hiệu ứng mượt hơn */
   border: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
-.btn-primary { background: var(--accent); color: white; }
-.btn-primary:hover { background: var(--accent-dark); }
-.btn-outline { border: 1px solid var(--border); background: transparent; color: var(--text); }
-.btn-outline:hover { background: var(--background); }
+
+/* Nút Primary (Màu xanh chính) */
+.btn-primary { 
+  background: var(--accent); 
+  color: white; 
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2), 0 2px 4px -1px rgba(37, 99, 235, 0.1);
+}
+
+.btn-primary:hover { 
+  background: var(--accent-dark); 
+  box-shadow: 0 8px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -2px rgba(37, 99, 235, 0.1);
+  transform: translateY(-2px); /* Nổi lên khi đưa chuột vào */
+}
+
+.btn-primary:active {
+  transform: translateY(0); /* Lún xuống khi click */
+  box-shadow: 0 2px 4px -1px rgba(37, 99, 235, 0.2);
+}
+
+/* Nút Outline (Viền) */
+.btn-outline { 
+  border: 1px solid var(--border); 
+  background: var(--white); 
+  color: var(--text); 
+}
+
+.btn-outline:hover { 
+  background: var(--background); 
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+}
+
+.btn-outline:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
 .muted { color: var(--muted); }
+
+/* Styling for Dropdown Nav */
+.nav-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-toggle {
+  display: flex;
+  justify-content: space-between !important; /* Dẩy mũi tên sang phải */
+  align-items: center;
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+  transition: transform 0.3s ease;
+}
+
+/* State open */
+.nav-item.open .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 24px; /* Thụt lề cho menu con */
+  margin-top: 4px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.nav-item.open .dropdown-menu {
+  max-height: 200px; /* Số đủ lớn để hiện các mục */
+}
+
+.dropdown-menu a {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 400;
+  border-radius: 8px;
+}

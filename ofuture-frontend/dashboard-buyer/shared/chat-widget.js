@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
             messagesContainer.removeChild(loadingDiv);
             
             // Backend có thể trả về trường 'reply' hoặc 'message', ta bắt cả 2
-            const botReply = response.data?.reply || response.data?.message || 'Xin lỗi, tôi đã tiếp nhận yêu cầu nhưng đang gặp sự cố nội bộ.';
+            const botReply = response.reply || response.message || response.data?.reply || response.data?.message || 'Xin lỗi, tôi đã tiếp nhận yêu cầu nhưng đang gặp sự cố nội bộ.';
             appendMessage(botReply, 'bot');
 
         } catch (error) {

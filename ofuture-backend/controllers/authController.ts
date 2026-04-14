@@ -432,6 +432,19 @@ const verifyEmail = async (req: AuthRequest, res: Response): Promise<any> => {
     await UserModel.verifyUser(user.id);
     await redisClient.del(redisKey);
 
+    const tokenPayload   = { id: user.id, email: user.email, role: user.role };
+    const accessToken    = signAccessToken(tokenPayload);
+    const rawRefresh     = generateRawRefreshToken();
+    const ip             = getClientIp(req);
+
+    await RefreshTokenModel.create({
+      userId      : user.id,
+      rawToken    : rawRefresh,
+      deviceInfo  : req.headers['user-agent'] ?? null,
+      ipAddress   : ip,
+      expiresAt   : refreshTokenExpiry(),
+    });
+
     await LogModel.write({
       ...ctx,
       userId: user.id,
@@ -442,7 +455,19 @@ const verifyEmail = async (req: AuthRequest, res: Response): Promise<any> => {
 
     res.status(200).json({
       success: true,
-      message: 'Email verified successfully. You can now log in.'
+      message: 'Email verified successfully. Auto logging in...',
+      data: {
+        accessToken,
+        refreshToken: rawRefresh,
+        expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+        user: {
+           id: user.id,
+           email: user.email,
+           username: user.username,
+           role: user.role,
+           fullName: user.full_name
+        }
+      }
     });
   } catch (err) {
     logger.error('verifyEmail error:', err);

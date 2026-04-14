@@ -177,3 +177,56 @@
     justify-content: space-between;
   }
 }
+
+/* ============================================================
+   Filter Tabs - Các nút lọc trạng thái (Tất cả, Đang mở...)
+   ============================================================ */
+.tabs {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px; /* Tránh bị cắt mất box-shadow */
+}
+
+.tab-btn {
+  padding: 8px 20px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 24px; /* Bo tròn dạng viên thuốc */
+  color: #64748b;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.tab-btn.active {
+  background: #2563eb; /* Nút đang chọn chuyển sang màu xanh */
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+  font-weight: 600;
+}
+
+/* ============================================================
+   Nút "Xem chi tiết" trong thẻ Tranh chấp
+   ============================================================ */
+.dispute-actions .btn {
+  padding: 10px 16px;
+  font-size: 14px;
+  border-radius: 8px; /* Khớp với style toàn cục */
+}
+
+/* Thêm khoảng cách nếu responsive nhỏ lại */
+@media (max-width: 1024px) {
+  .dispute-actions .btn {
+    padding: 12px 20px; /* To hơn chút trên mobile để dễ bấm */
+  }
+}

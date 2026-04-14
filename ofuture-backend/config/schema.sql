@@ -218,44 +218,37 @@ CREATE TABLE IF NOT EXISTS product_variants (
 -- or extend with an order_items table in a future phase.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS orders (
-  id              CHAR(36)        NOT NULL DEFAULT (UUID()),
-  buyer_id        CHAR(36)        NOT NULL,
-  seller_id       CHAR(36)        NOT NULL,
-  product_id        CHAR(36)        NULL,                        -- Keep for backward compatibility (can be NULL for multi-item orders)
-  quantity          INT UNSIGNED    NOT NULL DEFAULT 1,          -- Deprecated: use order_items for new orders
-  unit_price        DECIMAL(12, 2)  NOT NULL,                    -- Deprecated: use order_items for new orders
-  total_amount      DECIMAL(12, 2)  NOT NULL,                    -- Sum of order_items subtotals
-  shipping_fee      DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,       -- Shipping cost (VND)
-  discount_amount   DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,       -- Voucher/discount (VND)
-  final_total_amount DECIMAL(12, 2) NOT NULL,                    -- total_amount + shipping_fee - discount_amount
-  status          ENUM(
-                    'pending',
-                    'paid',
-                    'shipped',
-                    'completed',
-                    'cancelled',
-                    'refunded'
-                  )               NOT NULL DEFAULT 'pending',
-  shipping_address JSON           NULL,                      -- { street, city, country, zip }
-  carrier         VARCHAR(100)    NULL,
-  tracking_number VARCHAR(100)    NULL,
-  notes           TEXT            NULL,
-  cancelled_at    DATETIME        NULL,
-  completed_at    DATETIME        NULL,
-  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
-                                  ON UPDATE CURRENT_TIMESTAMP,
+  id                 CHAR(36)        NOT NULL DEFAULT (UUID()),
+  buyer_id           CHAR(36)        NOT NULL,
+  seller_id          CHAR(36)        NOT NULL,
+  total_amount       DECIMAL(12, 2)  NOT NULL,                    -- Tổng cộng tiền hàng (Sum of order_items subtotals)
+  shipping_fee       DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,       -- Phí vận chuyển (VND)
+  discount_amount    DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,       -- Giảm giá/Voucher (VND)
+  final_total_amount DECIMAL(12, 2)  NOT NULL,                    -- total_amount + shipping_fee - discount_amount
+  status             ENUM(
+                       'pending',
+                       'paid',
+                       'shipped',
+                       'completed',
+                       'cancelled',
+                       'refunded'
+                     )               NOT NULL DEFAULT 'pending',
+  shipping_address   JSON            NULL,                      -- { street, city, country, zip }
+  carrier            VARCHAR(100)    NULL,
+  tracking_number    VARCHAR(100)    NULL,
+  notes              TEXT            NULL,
+  cancelled_at       DATETIME        NULL,
+  completed_at       DATETIME        NULL,
+  created_at         DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at         DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   PRIMARY KEY (id),
   INDEX idx_orders_buyer_id   (buyer_id),
   INDEX idx_orders_seller_id  (seller_id),
-  INDEX idx_orders_product_id (product_id),
   INDEX idx_orders_status     (status),
   INDEX idx_orders_created_at (created_at),
-  CONSTRAINT fk_orders_buyer   FOREIGN KEY (buyer_id)
-    REFERENCES users    (id) ON DELETE RESTRICT,
-  CONSTRAINT fk_orders_seller  FOREIGN KEY (seller_id)
-    REFERENCES users    (id) ON DELETE RESTRICT
+  CONSTRAINT fk_orders_buyer  FOREIGN KEY (buyer_id)  REFERENCES users (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_orders_seller FOREIGN KEY (seller_id) REFERENCES users (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -264,23 +257,20 @@ CREATE TABLE IF NOT EXISTS orders (
 -- Each row represents one product in an order
 -- ============================================================
 CREATE TABLE IF NOT EXISTS order_items (
-  id              CHAR(36)        NOT NULL DEFAULT (UUID()),
-  order_id        CHAR(36)        NOT NULL,
-  product_id      CHAR(36)        NOT NULL,
-  quantity        INT UNSIGNED    NOT NULL DEFAULT 1,
-  unit_price      DECIMAL(12, 2)  NOT NULL,                  -- Price snapshot at order time (VND)
-  subtotal        DECIMAL(12, 2)  NOT NULL,                  -- quantity × unit_price (VND)
-  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
-                                  ON UPDATE CURRENT_TIMESTAMP,
+  id            CHAR(36)        NOT NULL DEFAULT (UUID()),
+  order_id      CHAR(36)        NOT NULL,
+  product_id    CHAR(36)        NOT NULL,
+  quantity      INT UNSIGNED    NOT NULL DEFAULT 1,
+  unit_price    DECIMAL(12, 2)  NOT NULL,
+  subtotal      DECIMAL(12, 2)  NOT NULL,                      -- quantity * unit_price
+  created_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   PRIMARY KEY (id),
-  INDEX idx_oi_order_id (order_id),
-  INDEX idx_oi_product_id (product_id),
-  CONSTRAINT fk_oi_order FOREIGN KEY (order_id)
-    REFERENCES orders (id) ON DELETE CASCADE,
-  CONSTRAINT fk_oi_product FOREIGN KEY (product_id)
-    REFERENCES products (id) ON DELETE RESTRICT
+  INDEX idx_order_items_order_id (order_id),
+  INDEX idx_order_items_product_id (product_id),
+  CONSTRAINT fk_order_items_order   FOREIGN KEY (order_id)   REFERENCES orders (id) ON DELETE CASCADE,
+  CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -786,25 +776,29 @@ FROM products p
 JOIN users u ON u.id = p.seller_id
 WHERE p.status = 'active';
 
--- View: order summary with buyer and product info
+-- View: order summary with buyer and product info (Hỗ trợ giỏ hàng nhiều sản phẩm)
 CREATE OR REPLACE VIEW v_order_summary AS
 SELECT
   o.id            AS order_id,
   o.status        AS order_status,
-  o.quantity,
-  o.unit_price,
-  o.total_amount,
+  
+  (SELECT SUM(quantity) FROM order_items WHERE order_id = o.id) AS quantity,
+  (SELECT unit_price FROM order_items WHERE order_id = o.id LIMIT 1) AS unit_price,
+  
+  o.final_total_amount AS total_amount, 
   o.created_at,
   b.username      AS buyer_username,
   b.email         AS buyer_email,
   s.username      AS seller_username,
-  p.name          AS product_name,
-  p.id            AS product_id,
+  
+  (SELECT p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = o.id ORDER BY oi.created_at ASC LIMIT 1) AS product_name,
+  (SELECT product_id FROM order_items WHERE order_id = o.id ORDER BY created_at ASC LIMIT 1) AS product_id,
+  
   e.status        AS escrow_status,
   e.amount        AS escrow_amount
+
 FROM orders o
 JOIN users    b ON b.id = o.buyer_id
 JOIN users    s ON s.id = o.seller_id
-JOIN products p ON p.id = o.product_id
 LEFT JOIN escrow_transactions e ON e.order_id = o.id;
 

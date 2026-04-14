@@ -46,7 +46,7 @@ function loadCart() {
                 <a href="../buyer-products/index.html" class="btn btn-primary" style="display:inline-block; padding: 10px 24px; margin-top: 10px;">Mua sắm ngay</a>
             </div>`;
         document.getElementById('checkoutBtn').disabled = true;
-        updateSummary(); updateCartBadge(); return;
+        updateSummary(); updateCartBadge(cartItems); return;
     }
 
     const allSelected = cartItems.length > 0 && cartItems.every(i => i.selected);
@@ -80,7 +80,7 @@ function loadCart() {
     }).join('');
 
     container.innerHTML = html;
-    updateSummary(); updateCartBadge();
+    updateSummary(); updateCartBadge(cartItems);
 }
 
 window.toggleSelect = function(id, isChecked) {
@@ -138,8 +138,9 @@ window.updateQtyInput = function(id, val) {
     loadCart();
 }
 
-function updateCartBadge() {
-    const totalItems = cartData.length;
+function updateCartBadge(items) {
+    const safeItems = items || JSON.parse(localStorage.getItem(CART_KEY)) || [];
+    const totalItems = safeItems.length;
     const badge = document.getElementById('cartBadge');
     if (badge) {
         badge.textContent = totalItems;

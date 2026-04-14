@@ -339,17 +339,7 @@ class NotificationManager {
         this.pollChecker = null;
         console.log('WebSocket connected (checker) - stopped polling');
       }
-    }, 3000);
-  }, 5000);
-
-    // Stop polling if tab is hidden
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        clearInterval(this.pollInterval);
-      } else {
-        this.setupPolling();
-      }
-    });
+    },3000);
   }
 }
 

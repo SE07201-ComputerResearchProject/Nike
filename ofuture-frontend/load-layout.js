@@ -55,7 +55,21 @@ function setupAuthUI(basePath) {
 }
 
 window.logoutGlobal = function() {
-    localStorage.clear();
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('refreshToken')
     const basePath = window.location.pathname.includes('ofuture-frontend') ? '/ofuture-frontend' : '';
     window.location.href = `${basePath}/login.html`;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Xử lý menu dropdown
+    const orderMenuBtn = document.getElementById('orderMenuBtn');
+    if (orderMenuBtn) {
+        orderMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // Ngăn chuyển trang nếu chỉ muốn mở menu
+            const parentItem = this.parentElement;
+            parentItem.classList.toggle('open');
+        });
+    }
+});

@@ -1,29 +1,20 @@
 // services/aiChatService.ts
-// ─────────────────────────────────────────────
-// AI Chat Service using RAG (Retrieval-Augmented Generation).
-// Fetches real-time database context before calling the LLM
-// to guarantee zero-hallucination responses.
-// ─────────────────────────────────────────────
-
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { pool } from '../config/db';
 import logger from '../utils/logger';
 
-// Initialize Google Generative AI Client
 console.log("👉 API Key:", process.env.GEMINI_API_KEY ? "Loaded ✅" : "UNDEFINED ❌");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-const AI_MODEL = 'gemini-2.5-flash-lite';
+const AI_MODEL = process.env.AI_MODEL_NAME || 'gemini-2.5-flash';
 
 const AiChatService = {
-  // ── 1. Fetch System Knowledge (RAG Core) ──────────────────
   async fetchKnowledgeBase(): Promise<string> {
     try {
       const [rows]: any = await pool.execute(
         'SELECT topic, content FROM knowledge_base WHERE is_active = 1'
       );
       if (!rows.length) return 'No specific platform rules found.';
-
       return rows.map((row: any) => `- ${row.topic.toUpperCase()}: ${row.content}`).join('\n');
     } catch (error) {
       logger.error('Error fetching knowledge base:', error);
@@ -31,10 +22,8 @@ const AiChatService = {
     }
   },
 
-  // ── 2. Fetch User Specific Context (RAG Core) ───────────────
   async fetchUserContext(userId: string): Promise<string> {
     try {
-      // Fetch the 3 most recent orders to provide context if user asks "Where is my order?"
       const [orders]: any = await pool.execute(
         `SELECT id, status, total_amount, created_at 
          FROM orders 
@@ -43,9 +32,7 @@ const AiChatService = {
          LIMIT 3`,
         [userId]
       );
-
       if (!orders.length) return 'User has no recent orders.';
-
       return orders.map((o: any) =>
         `Order ID: ${o.id} | Status: ${o.status} | Total: $${o.total_amount} | Date: ${o.created_at}`
       ).join('\n');
@@ -55,7 +42,6 @@ const AiChatService = {
     }
   },
 
-  // ── 3. Build the Strict System Prompt ───────────────────────
   async generateSystemPrompt(userId: string): Promise<string> {
     const platformRules = await this.fetchKnowledgeBase();
     const userOrders = await this.fetchUserContext(userId);
@@ -78,7 +64,6 @@ ${userOrders}
     `.trim();
   },
 
-  // ── 4. Main Process: Handle User Message & Get AI Reply ─────
   async processMessage(userId: string, sessionId: string, messageText: string) {
     try {
       // 4.1 Save user's message to database
@@ -88,43 +73,55 @@ ${userOrders}
         [sessionId, messageText]
       );
 
-      // 4.2 Fetch chat history for context window (last 10 messages to save tokens)
+      // ✅ SỬA 2: Sửa câu lệnh SQL để lấy đúng 10 tin nhắn MỚI NHẤT
       const [historyRows]: any = await pool.execute(
         `SELECT sender_type, message_text 
-         FROM chat_messages 
-         WHERE session_id = ? 
-         ORDER BY created_at ASC 
-         LIMIT 10`,
+         FROM (
+           SELECT sender_type, message_text, created_at 
+           FROM chat_messages 
+           WHERE session_id = ? 
+           ORDER BY created_at DESC 
+           LIMIT 10
+         ) sub
+         ORDER BY created_at ASC`,
         [sessionId]
       );
 
-      // 4.3 Generate strict system prompt injected with live DB data
       const systemPrompt = await this.generateSystemPrompt(userId);
-
-      // 4.4 Call Gemini API via Google SDK
       let aiResponseText = '';
+
       try {
         console.log("👉 Đang gọi Model:", AI_MODEL);
-
         const model = genAI.getGenerativeModel({
           model: AI_MODEL,
           systemInstruction: systemPrompt,
           generationConfig: {
-            temperature: 0.2, // Low temperature for factual, non-creative responses
+            temperature: 0.2,
             maxOutputTokens: 300,
           },
         });
 
-        // Map DB history sang Gemini format (bỏ message cuối vì sẽ sendMessage riêng)
-        // Gemini yêu cầu history phải bắt đầu bằng 'user' và xen kẽ user/model
-        const rawHistory = historyRows.slice(0, -1); // bỏ message cuối (message hiện tại)
+        // Bỏ tin nhắn cuối (chính là tin nhắn user vừa gửi)
+        const rawHistory = historyRows.slice(0, -1); 
         const geminiHistory = rawHistory.map((row: any) => ({
           role: row.sender_type === 'user' ? 'user' : 'model',
           parts: [{ text: row.message_text }],
         }));
 
-        // Đảm bảo history bắt đầu bằng 'user' (Gemini requirement)
-        const validHistory = geminiHistory[0]?.role === 'user' ? geminiHistory : [];
+        // ✅ SỬA 3: Thuật toán ép buộc History phải xen kẽ (Chống crash)
+        const validHistory: any[] = [];
+        let expectedRole = 'user';
+        for (const msg of geminiHistory) {
+          if (msg.role === expectedRole) {
+            validHistory.push(msg);
+            expectedRole = expectedRole === 'user' ? 'model' : 'user';
+          }
+        }
+        
+        // Cắt bỏ nếu tin nhắn chót đang là 'user' để dọn chỗ cho messageText tiếp theo
+        if (validHistory.length > 0 && validHistory[validHistory.length - 1].role === 'user') {
+          validHistory.pop();
+        }
 
         const chat = model.startChat({
           history: validHistory,
@@ -139,7 +136,7 @@ ${userOrders}
         aiResponseText = 'I am currently experiencing technical difficulties connecting to my brain. Please try again later or request human support.';
       }
 
-      // 4.5 Save AI's response to database
+      // 4.5 Save AI's response
       await pool.execute(
         `INSERT INTO chat_messages (session_id, sender_type, message_text) 
          VALUES (?, 'ai', ?)`,

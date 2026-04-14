@@ -104,14 +104,21 @@ const validateCreateProduct = [
 
 // ── Order validators ───────────────────────────
 const validateCreateOrder = [
-  body('productId')
+  // 1. Kiểm tra biến items phải là một mảng và không được rỗng
+  body('items')
+    .isArray({ min: 1 }).withMessage('Cart items are required and must be an array.'),
+
+  // 2. Kiểm tra từng productId bên trong mảng items
+  body('items.*.productId')
     .trim()
     .isUUID().withMessage('Must be a valid product ID.'),
 
-  body('quantity')
+  // 3. Kiểm tra từng quantity bên trong mảng items
+  body('items.*.quantity')
     .isInt({ min: 1, max: 999 }).withMessage('Quantity must be between 1 and 999.')
     .toInt(),
 
+  // 4. Các biến địa chỉ giữ nguyên
   body('shippingAddress')
     .notEmpty().withMessage('Shipping address is required.'),
 

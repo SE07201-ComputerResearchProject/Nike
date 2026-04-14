@@ -34,21 +34,23 @@ const OrderModel = {
   async findById(id: string) {
     const [rows]: any = await pool.execute(
       `SELECT
-         o.id, o.buyer_id, o.seller_id, o.product_id,
-         o.quantity, o.unit_price, o.total_amount,
+         o.id, o.buyer_id, o.seller_id,
+         (SELECT product_id FROM order_items WHERE order_id = o.id LIMIT 1) AS product_id,
+         (SELECT SUM(quantity) FROM order_items WHERE order_id = o.id) AS quantity,
+         (SELECT unit_price FROM order_items WHERE order_id = o.id LIMIT 1) AS unit_price,
+         o.final_total_amount as total_amount,
          o.status, o.shipping_address, o.notes,
          o.cancelled_at, o.completed_at,
          o.created_at, o.updated_at,
          b.username  AS buyer_username,
          b.email     AS buyer_email,
          s.username  AS seller_username,
-         p.name      AS product_name,
+         (SELECT p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = o.id LIMIT 1) AS product_name,
          e.status    AS escrow_status,
          e.amount    AS escrow_amount
        FROM orders o
        JOIN users    b ON b.id = o.buyer_id
        JOIN users    s ON s.id = o.seller_id
-       JOIN products p ON p.id = o.product_id
        LEFT JOIN escrow_transactions e ON e.order_id = o.id
        WHERE o.id = ? LIMIT 1`,
       [id]
@@ -65,14 +67,16 @@ const OrderModel = {
     const where = `WHERE ${conditions.join(' AND ')}`;
     const [rows]: any = await pool.execute(
       `SELECT
-         o.id, o.status, o.quantity, o.unit_price, o.total_amount,
+         o.id, o.status,
+         (SELECT SUM(quantity) FROM order_items WHERE order_id = o.id) AS quantity,
+         (SELECT unit_price FROM order_items WHERE order_id = o.id LIMIT 1) AS unit_price,
+         o.final_total_amount as total_amount,
          o.created_at,
-         p.name AS product_name,
-         p.id   AS product_id,
+         (SELECT p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = o.id LIMIT 1) AS product_name,
+         (SELECT product_id FROM order_items WHERE order_id = o.id LIMIT 1) AS product_id,
          s.username AS seller_username
        FROM orders o
-       JOIN products p ON p.id = o.product_id
-       JOIN users    s ON s.id = o.seller_id
+       JOIN users s ON s.id = o.seller_id
        ${where}
        ORDER BY o.created_at DESC
        LIMIT ? OFFSET ?`,
@@ -90,13 +94,15 @@ const OrderModel = {
     const where = `WHERE ${conditions.join(' AND ')}`;
     const [rows]: any = await pool.execute(
       `SELECT
-         o.id, o.status, o.quantity, o.unit_price, o.total_amount,
+         o.id, o.status,
+         (SELECT SUM(quantity) FROM order_items WHERE order_id = o.id) AS quantity,
+         (SELECT unit_price FROM order_items WHERE order_id = o.id LIMIT 1) AS unit_price,
+         o.final_total_amount as total_amount,
          o.created_at,
-         p.name AS product_name,
+         (SELECT p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = o.id LIMIT 1) AS product_name,
          b.username AS buyer_username
        FROM orders o
-       JOIN products p ON p.id = o.product_id
-       JOIN users    b ON b.id = o.buyer_id
+       JOIN users b ON b.id = o.buyer_id
        ${where}
        ORDER BY o.created_at DESC
        LIMIT ? OFFSET ?`,
@@ -130,14 +136,13 @@ const OrderModel = {
 
     const [rows]: any = await pool.execute(
       `SELECT
-         o.id, o.status, o.total_amount, o.created_at,
+         o.id, o.status, o.final_total_amount as total_amount, o.created_at,
          b.username AS buyer,
          s.username AS seller,
-         p.name     AS product
+         (SELECT p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = o.id LIMIT 1) AS product
        FROM orders o
-       JOIN users    b ON b.id = o.buyer_id
-       JOIN users    s ON s.id = o.seller_id
-       JOIN products p ON p.id = o.product_id
+       JOIN users b ON b.id = o.buyer_id
+       JOIN users s ON s.id = o.seller_id
        ${where}
        ORDER BY o.created_at DESC
        LIMIT ? OFFSET ?`,

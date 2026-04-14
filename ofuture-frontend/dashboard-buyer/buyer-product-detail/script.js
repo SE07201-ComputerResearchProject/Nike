@@ -72,25 +72,33 @@ function renderProduct(p) {
     document.getElementById('productContainer').style.display = 'grid';
 
     // Xử lý ảnh giống với trang danh sách sản phẩm
-    let imgUrl = '../../images/image.png';
+    const backendBaseUrl = API_BASE_URL.replace('/api', '');
+    let defaultImg = '../../images/image.png';
+    let mainImgSrc = defaultImg;
+
     if (p.imageUrls) {
         try {
             const parsedImgs = typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls) : p.imageUrls;
             if (Array.isArray(parsedImgs) && parsedImgs.length > 0) {
-                // 1. Cập nhật ảnh chính
-                document.getElementById('mainImage').src = parsedImgs[0];
+                // Hàm nối domain cho ảnh
+                const getFullUrl = (url) => url.startsWith('/uploads') ? `${backendBaseUrl}${url}` : url;
                 
-                // 2. Tạo Gallery ảnh phụ (bạn cần thêm <div id="imageGallery"></div> vào file HTML)
+                mainImgSrc = getFullUrl(parsedImgs[0]);
+                
+                // Đổ danh sách ảnh phụ
                 const galleryContainer = document.getElementById('imageGallery');
                 if (galleryContainer) {
-                    galleryContainer.innerHTML = parsedImgs.map(img => 
-                        `<img src="${img}" width="60" style="cursor:pointer; margin: 5px; border: 1px solid #ccc;" onclick="document.getElementById('mainImage').src='${img}'">`
-                    ).join('');
+                    galleryContainer.innerHTML = parsedImgs.map(img => {
+                        const fullImg = getFullUrl(img);
+                        return `<img src="${fullImg}" width="80" height="80" style="cursor:pointer; border: 1px solid #ccc; object-fit: cover; border-radius: 4px;" onclick="document.getElementById('mainImage').src='${fullImg}'">`;
+                    }).join('');
                 }
             }
-        } catch (e) {}
+        } catch (e) {
+            console.error("Lỗi parse hình ảnh:", e);
+        }
     }
-    document.getElementById('mainImage').src = imgUrl;
+    document.getElementById('mainImage').src = mainImgSrc;
 
     // Đổ dữ liệu text (Đã sửa theo camelCase và cấu trúc seller)
     document.getElementById('productName').textContent = p.name;
