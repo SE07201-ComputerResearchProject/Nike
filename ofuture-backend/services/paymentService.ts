@@ -118,10 +118,9 @@ const transferToSeller = async ({ sellerId, amount, currency = 'USD', orderId }:
 // ═════════════════════════════════════════════
 
 const createMoMoPayment = async (orderId: string, amount: number) => {
-  const [[order]]: any = await pool.execute('SELECT id, status FROM orders WHERE id = ? LIMIT 1', [orderId]);
-  if (!order) throw new Error('Order not found');
-  if (order.status !== 'pending') throw new Error(`Cannot pay for order with status: ${order.status}`);
-
+ const [orders]: any = await pool.execute('SELECT id, status FROM orders WHERE id = ? OR notes LIKE ?', [orderId, `%BATCH:${orderId}%`]);
+  if (orders.length === 0) throw new Error('Order not found');
+  if (orders.some((o: any) => o.status !== 'pending')) throw new Error('Có đơn hàng không ở trạng thái pending.');
   const momoResponse = await MoMoClient.createPaymentRequest({
     orderId,
     amount,
@@ -171,9 +170,9 @@ const handleMoMoCallback = async (callbackData: MoMoCallbackData): Promise<void>
     await conn.beginTransaction();
 
     // Dùng actualOrderId thay vì callbackData.orderId
-    const [[order]]: any = await conn.execute(
-      'SELECT buyer_id, total_amount FROM orders WHERE id = ? LIMIT 1',
-      [actualOrderId]
+    const [orders]: any = await conn.execute(
+      'SELECT id, buyer_id, total_amount FROM orders WHERE id = ? OR notes LIKE ?',
+      [actualOrderId, `%BATCH:${actualOrderId}%`]
     );
 
     await conn.execute(
@@ -181,33 +180,36 @@ const handleMoMoCallback = async (callbackData: MoMoCallbackData): Promise<void>
       [newStatus, callbackData.transId || null, payment.id]
     );
 
-    if (isSuccess) {
-      await conn.execute(`UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, [actualOrderId]);
-      await conn.execute(
-        `UPDATE escrow_transactions SET status = 'held', held_at = NOW() WHERE order_id = ? AND status = 'pending'`,
-        [actualOrderId]
-      );
-      logger.info(`[MoMo] Payment Success. Order ${actualOrderId} paid & funds held in escrow.`);
-    } else {
-      logger.warn(`[MoMo] Payment Failed for Order ${actualOrderId}: ${callbackData.message}`);
-    }
+    if (isSuccess && orders.length > 0) {
+      for (const o of orders) {
+        await conn.execute(`UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, [o.id]);
+        await conn.execute(
+          `UPDATE escrow_transactions SET status = 'held', held_at = NOW() WHERE order_id = ? AND status = 'pending'`,
+          [o.id]
+        );
+      }
+      logger.info(`[MoMo] Payment Success. Tách thanh toán thành công cho ${orders.length} đơn hàng thuộc Batch ${actualOrderId}`);
 
-    await conn.commit();
-
-    // After transaction commits, update wallet
-    if (isSuccess && order) {
+      // Update wallet
       try {
         await WalletService.depositFromPayment(
-          order.buyer_id,
+          orders[0].buyer_id,
           callbackData.amount,
           payment.id,
           'momo',
-          `MoMo payment for order ${actualOrderId}`
+          `MoMo payment for batch ${actualOrderId}`
         );
       } catch (walletErr) {
         logger.error('Wallet deposit failed:', walletErr);
       }
+    } else if (isSuccess) {
+      // No matching orders found — log as warning
+      logger.warn(`[MoMo] Payment Success but no orders found for ${actualOrderId}`);
+    } else {
+      logger.warn(`[MoMo] Payment Failed for ${actualOrderId}: ${callbackData.message}`);
     }
+
+    await conn.commit();
   } catch (err) {
     await conn.rollback();
     logger.error('handleMoMoCallback transaction error:', err);
@@ -218,9 +220,9 @@ const handleMoMoCallback = async (callbackData: MoMoCallbackData): Promise<void>
 };
 
 const createQRPayment = async (orderId: string, amount: number) => {
-  const [[order]]: any = await pool.execute('SELECT id, status FROM orders WHERE id = ? LIMIT 1', [orderId]);
-  if (!order) throw new Error('Order not found');
-  if (order.status !== 'pending') throw new Error(`Cannot pay for order with status: ${order.status}`);
+  const [orders]: any = await pool.execute('SELECT id, status FROM orders WHERE id = ? OR notes LIKE ?', [orderId, `%BATCH:${orderId}%`]);
+  if (orders.length === 0) throw new Error('Order not found');
+  if (orders.some((o: any) => o.status !== 'pending')) throw new Error('Có đơn hàng không ở trạng thái pending.');
 
   const qrCodeImage = await QRCodeGenerator.generateQRCode({ orderId, amount });
   const paymentInfo = QRCodeGenerator.getPaymentInfo({ orderId, amount });
@@ -260,8 +262,20 @@ const updateQRPaymentStatus = async (paymentId: string, success: boolean): Promi
     );
 
     if (success) {
-      await conn.execute(`UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, [payment.order_id]);
-      await conn.execute(`UPDATE escrow_transactions SET status = 'held', held_at = NOW() WHERE order_id = ? AND status = 'pending'`, [payment.order_id]);
+      const [orders]: any = await conn.execute(
+        'SELECT id FROM orders WHERE id = ? OR notes LIKE ?',
+        [payment.order_id, `%BATCH:${payment.order_id}%`]
+      );
+
+      if (orders.length > 0) {
+        for (const o of orders) {
+          await conn.execute(`UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, [o.id]);
+          await conn.execute(`UPDATE escrow_transactions SET status = 'held', held_at = NOW() WHERE order_id = ? AND status = 'pending'`, [o.id]);
+        }
+      } else {
+        // No orders found for this payment.order_id
+        logger.warn(`[QR] Payment success but no orders found for ${payment.order_id}`);
+      }
     }
 
     await conn.commit();

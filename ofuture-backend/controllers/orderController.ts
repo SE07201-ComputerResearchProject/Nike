@@ -63,11 +63,15 @@ const canTransition = (from: string, to: string) =>
 
 // ─────────────────────────────────────────────
 // POST /api/orders
-// Buyer places a new order.
+// Buyer places a new order. 
+// TỰ ĐỘNG TÁCH ĐƠN HÀNG THEO SELLER
 // Entire flow is wrapped in a DB transaction.
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// POST /api/orders
+// Tách đơn hàng tự động + Gắn Batch ID cho Thanh toán
+// ─────────────────────────────────────────────
 const createOrder = async (req: OrderRequest, res: Response): Promise<any> => {
-  // Thay đổi: Nhận mảng items [{ productId, quantity }] thay vì 1 productId
   const { items, shippingAddress, notes } = req.body;
   const buyerId = req.user.id;
 
@@ -80,11 +84,12 @@ const createOrder = async (req: OrderRequest, res: Response): Promise<any> => {
   try {
     await conn.beginTransaction();
 
-    let totalAmount = 0;
-    let sellerId = null;
-    const orderItemsToInsert = [];
+    const groupedOrders: Record<string, any> = {};
+    let totalCartAmount = 0;
+    const totalShippingFee = req.body.shippingFee || 0;
+    const totalDiscount = req.body.discountAmount || 0;
 
-    // 1. Duyệt qua từng sản phẩm để lấy thông tin, khóa dòng (FOR UPDATE) và kiểm tra stock
+    // 1. Duyệt qua từng sản phẩm để lấy thông tin và gom nhóm theo seller_id
     for (const item of items) {
       const [productRows]: any = await conn.execute(
         `SELECT id, seller_id, name, price, stock_quantity, status
@@ -94,87 +99,80 @@ const createOrder = async (req: OrderRequest, res: Response): Promise<any> => {
 
       const product = productRows[0];
 
-      if (!product) {
-        throw new Error(`Sản phẩm ${item.productId} không tồn tại hoặc đã ngừng bán.`);
-      }
-      if (product.seller_id === buyerId) {
-        throw new Error(`Bạn không thể mua sản phẩm của chính mình (${product.name}).`);
-      }
-      if (product.stock_quantity < item.quantity) {
-        throw new Error(`Sản phẩm "${product.name}" không đủ số lượng (Còn: ${product.stock_quantity}).`);
-      }
+      if (!product) throw new Error(`Sản phẩm ${item.productId} không tồn tại.`);
+      if (product.seller_id === buyerId) throw new Error(`Bạn không thể tự mua sản phẩm của mình.`);
+      if (product.stock_quantity < item.quantity) throw new Error(`Sản phẩm "${product.name}" không đủ số lượng.`);
 
-      // Xác định seller (Tất cả items trong 1 order phải cùng 1 seller)
-      if (!sellerId) sellerId = product.seller_id;
-      else if (sellerId !== product.seller_id) {
-        throw new Error('Tất cả sản phẩm trong một đơn hàng phải thuộc cùng 1 người bán.');
-      }
-
+      const sellerId = product.seller_id;
       const unitPrice = parseFloat(product.price);
       const subtotal = parseFloat((unitPrice * item.quantity).toFixed(2));
-      totalAmount += subtotal;
+      totalCartAmount += subtotal;
 
-      // Chuẩn bị dữ liệu cho order_items
-      orderItemsToInsert.push({
-        product_id: product.id,
-        quantity: item.quantity,
-        unit_price: unitPrice,
-        subtotal: subtotal
-      });
-
-      // 2. Trừ stock ngay lập tức
+      // Trừ stock ngay lập tức
       await conn.execute(
         `UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?`,
         [item.quantity, product.id]
       );
+
+      if (!groupedOrders[sellerId]) {
+        groupedOrders[sellerId] = { totalAmount: 0, items: [] };
+      }
+      groupedOrders[sellerId].totalAmount += subtotal;
+      groupedOrders[sellerId].items.push({
+        product_id: product.id, quantity: item.quantity, unit_price: unitPrice, subtotal
+      });
     }
 
-    // 3. Tạo Đơn Hàng (Bảng orders) - KHÔNG còn product_id
-    const orderId = require('crypto').randomUUID();
-    const shippingFee = req.body.shippingFee || 0;
-    const discountAmount = req.body.discountAmount || 0;
-    const finalTotalAmount = totalAmount + shippingFee - discountAmount;
+    // 2. Tạo BATCH ID để MoMo có thể thanh toán 1 lần cho tất cả đơn hàng này
+    const batchId = require('crypto').randomUUID();
+    const batchNote = notes ? `${notes} | BATCH:${batchId}` : `BATCH:${batchId}`;
+    
+    const sellerCount = Object.keys(groupedOrders).length;
+    const splitShippingFee = parseFloat((totalShippingFee / sellerCount).toFixed(2));
+    const splitDiscount = parseFloat((totalDiscount / sellerCount).toFixed(2));
+    let finalTotalAmountAll = 0;
 
-    await conn.execute(
-      `INSERT INTO orders 
-         (id, buyer_id, seller_id, total_amount, shipping_fee, discount_amount, final_total_amount, shipping_address, notes, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
-      [
-        orderId, buyerId, sellerId, totalAmount, shippingFee, discountAmount, finalTotalAmount,
-        JSON.stringify(shippingAddress), notes ?? null
-      ]
-    );
+    // 3. Tách và lưu từng đơn hàng riêng biệt vào DB
+    for (const sellerId in groupedOrders) {
+      const group = groupedOrders[sellerId];
+      const orderId = require('crypto').randomUUID();
+      const finalTotalAmount = group.totalAmount + splitShippingFee - splitDiscount;
+      finalTotalAmountAll += finalTotalAmount;
 
-    // 4. Tạo chi tiết đơn hàng (Bảng order_items)
-    for (const oi of orderItemsToInsert) {
-      const itemId = require('crypto').randomUUID();
       await conn.execute(
-        `INSERT INTO order_items (id, order_id, product_id, quantity, unit_price, subtotal)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [itemId, orderId, oi.product_id, oi.quantity, oi.unit_price, oi.subtotal]
+        `INSERT INTO orders 
+           (id, buyer_id, seller_id, total_amount, shipping_fee, discount_amount, final_total_amount, shipping_address, notes, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        [orderId, buyerId, sellerId, group.totalAmount, splitShippingFee, splitDiscount, finalTotalAmount, JSON.stringify(shippingAddress), batchNote]
+      );
+
+      for (const oi of group.items) {
+        await conn.execute(
+          `INSERT INTO order_items (id, order_id, product_id, quantity, unit_price, subtotal)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [require('crypto').randomUUID(), orderId, oi.product_id, oi.quantity, oi.unit_price, oi.subtotal]
+        );
+      }
+
+      const platformFee = parseFloat((finalTotalAmount * 0.025).toFixed(2));
+      await conn.execute(
+        `INSERT INTO escrow_transactions
+           (order_id, buyer_id, seller_id, amount, platform_fee, net_amount, status)
+         VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+        [orderId, buyerId, sellerId, finalTotalAmount, platformFee, finalTotalAmount - platformFee]
       );
     }
 
-    // 5. Tạo Ký Quỹ (Escrow) CHỈ 1 ROW CHO TOÀN BỘ ĐƠN HÀNG
-    const platformFee = parseFloat((finalTotalAmount * 0.025).toFixed(2));
-    const netAmount = parseFloat((finalTotalAmount - platformFee).toFixed(2));
-
-    await conn.execute(
-      `INSERT INTO escrow_transactions
-         (order_id, buyer_id, seller_id, amount, platform_fee, net_amount, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [orderId, buyerId, sellerId, finalTotalAmount, platformFee, netAmount]
-    );
-
     await conn.commit();
 
+    // 4. Trả về batchId để file script.js gọi API thanh toán MoMo/QR
     res.status(201).json({
       success: true,
-      message: 'Đơn hàng đã được tạo thành công.',
+      message: 'Đã tách và tạo đơn hàng thành công.',
       data: {
-        orderId,
-        totalAmount,
-        finalTotalAmount,
+        orderId: batchId, // Gửi batchId đi thay vì 1 orderId đơn lẻ
+        totalAmount: totalCartAmount,
+        finalTotalAmount: finalTotalAmountAll,
         status: 'pending'
       }
     });
@@ -616,20 +614,21 @@ const formatOrderSummary = (o: any) => ({
 const formatOrderDetail = (o: any) => ({
   id              : o.id,
   status          : o.status,
-  quantity        : o.quantity,
-  unitPrice       : parseFloat(o.unit_price),
-  totalAmount     : parseFloat(o.total_amount),
+  quantity        : o.quantity || 0,
+  unitPrice       : parseFloat(o.unit_price || '0'),
+  totalAmount     : parseFloat(o.total_amount || o.final_total_amount || '0'),
   shippingAddress : safeParseJson(o.shipping_address),
   notes           : o.notes,
   buyer           : { id: o.buyer_id,  username: o.buyer_username,  email: o.buyer_email },
   seller          : { id: o.seller_id, username: o.seller_username },
   product         : { id: o.product_id, name: o.product_name },
-  escrow          : { status: o.escrow_status, amount: o.escrow_amount
-                        ? parseFloat(o.escrow_amount) : null },
+  escrow          : { status: o.escrow_status, amount: o.escrow_amount ? parseFloat(o.escrow_amount) : null },
   cancelledAt     : o.cancelled_at,
   completedAt     : o.completed_at,
   createdAt       : o.created_at,
   updatedAt       : o.updated_at,
+  items           : o.items || [],
+  history         : o.history || []
 });
 
 const safeParseJson = (value: any, fallback: any = null) => {
