@@ -11,6 +11,29 @@ let CART_KEY = 'cart';
 let allProducts = []; // Lưu trữ toàn bộ sản phẩm tải từ server
 let filteredProducts = []; // Lưu trữ sản phẩm sau khi lọc/tìm kiếm
 
+// Chuyển tên/category có dấu → slug (no diacritics, spaces -> _, UPPERCASE)
+function toSlug(input) {
+    if (!input && input !== 0) return '';
+    try {
+        return String(input)
+            .normalize('NFD')
+            .replace(/\p{Diacritic}/gu, '')
+            .replace(/\s+/g, '_')
+            .replace(/[^\w_]/g, '')
+            .toUpperCase();
+    } catch (e) {
+        return String(input).toUpperCase();
+    }
+}
+
+// Các alias (từ khóa thay thế) để map tag tiếng Anh → tab tiếng Việt
+const CATEGORY_ALIASES = {
+    'THOI_TRANG': ['THOI_TRANG', 'FASHION', 'CLOTHING', 'APPAREL', 'QUAN_AO'],
+    'DIEN_TU': ['DIEN_TU', 'ELECTRONICS', 'GADGET', 'GADGETS'],
+    'GIA_DUNG': ['GIA_DUNG', 'HOUSEHOLD', 'HOME'],
+    'KHAC': ['KHAC', 'OTHER']
+};
+
 // ── 1. Auth Guard & Cập nhật UI chung ─────────────────────
 function checkAuth() {
     const token = localStorage.getItem('accessToken');
@@ -69,13 +92,56 @@ async function fetchProducts() {
 function applyFiltersAndRender() {
     // Lấy giá trị bộ lọc
     const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-    const activeTab = document.querySelector('.category-tab.active').dataset.category;
+    const activeTab = document.querySelector('.category-tab.active')?.dataset.category || 'ALL';
     const sortValue = document.getElementById('sortSelect').value;
 
     // Lọc theo Danh mục & Tìm kiếm
     filteredProducts = allProducts.filter(p => {
-        const matchCategory = activeTab === 'ALL' || p.category.toUpperCase() === activeTab;
-        const matchSearch = p.name.toLowerCase().includes(searchQuery);
+        const name = (p.name || '').toString();
+        const productCategory = p.category || p.category_name || '';
+        const productCategorySlug = toSlug(productCategory);
+
+        // 1) So sánh trực tiếp category/slug
+        let matchCategory = activeTab === 'ALL' || productCategorySlug === activeTab || (productCategory && productCategory.toUpperCase() === activeTab);
+        const aliases = CATEGORY_ALIASES[activeTab] || [];
+        if (!matchCategory && aliases.length > 0) {
+            if (aliases.includes(productCategorySlug) || aliases.includes((productCategory || '').toUpperCase())) {
+                matchCategory = true;
+            }
+        }
+
+        // 2) Nếu chưa match, thử kiểm tra tags / variants / attributes
+        if (!matchCategory) {
+            const rawTags = p.tags || p.product_tags || p.variants || p.attributes || p.productVariants || null;
+            let tagArr = [];
+
+            if (rawTags) {
+                if (Array.isArray(rawTags)) tagArr = rawTags;
+                else if (typeof rawTags === 'string') {
+                    try {
+                        const parsed = JSON.parse(rawTags);
+                        tagArr = Array.isArray(parsed) ? parsed : [parsed];
+                    } catch (err) {
+                        tagArr = rawTags.split(',').map(s => s.trim()).filter(Boolean);
+                    }
+                } else if (typeof rawTags === 'object') {
+                    try { tagArr = Object.values(rawTags).flat(); } catch (e) { tagArr = [rawTags]; }
+                }
+            }
+
+            if (Array.isArray(tagArr) && tagArr.length > 0) {
+                matchCategory = tagArr.some(t => {
+                    if (!t) return false;
+                    if (typeof t === 'object') {
+                        return [t.name, t.value, t.attribute_name, t.attribute_value, t.label].some(v => v && (toSlug(v) === activeTab || aliases.includes(toSlug(v)) || String(v).toUpperCase() === activeTab));
+                    }
+                    const tSlug = toSlug(t);
+                    return tSlug === activeTab || String(t).toUpperCase() === activeTab || aliases.includes(tSlug);
+                });
+            }
+        }
+
+        const matchSearch = name.toLowerCase().includes(searchQuery);
         return matchCategory && matchSearch;
     });
 
