@@ -598,18 +598,31 @@ const adminUpdateStatus = async (req: OrderRequest, res: Response): Promise<any>
 // ─────────────────────────────────────────────
 // Private formatters
 // ─────────────────────────────────────────────
-const formatOrderSummary = (o: any) => ({
-  id             : o.id,
-  status         : o.status,
-  quantity       : o.quantity,
-  unitPrice      : parseFloat(o.unit_price),
-  totalAmount    : parseFloat(o.total_amount),
-  productName    : o.product_name,
-  productId      : o.product_id,
-  sellerUsername : o.seller_username,
-  buyerUsername  : o.buyer_username,
-  createdAt      : o.created_at,
-});
+const formatOrderSummary = (o: any) => {
+  let productImage = null;
+  try {
+    if (o.image_urls) {
+      const parsed = JSON.parse(o.image_urls);
+      productImage = Array.isArray(parsed) ? parsed[0] : parsed;
+    }
+  } catch (e) {
+    productImage = o.image_urls; // fallback if not JSON
+  }
+  
+  return {
+    id             : o.id,
+    status         : o.status,
+    quantity       : o.quantity,
+    unitPrice      : parseFloat(o.unit_price),
+    totalAmount    : parseFloat(o.total_amount),
+    productName    : o.product_name,
+    productImage   : productImage,
+    productId      : o.product_id,
+    sellerUsername : o.seller_username,
+    buyerUsername  : o.buyer_username,
+    createdAt      : o.created_at,
+  };
+};
 
 const formatOrderDetail = (o: any) => ({
   id              : o.id,

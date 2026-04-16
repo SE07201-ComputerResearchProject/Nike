@@ -4,6 +4,8 @@
 // ============================================================
 
 const API_BASE_URL = 'http://localhost:5000/api';
+// Extract base URL for image uploads (remove /api suffix)
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '') || 'http://localhost:5000';
 
 // Store data
 let currentUser = null;
@@ -239,9 +241,7 @@ function renderProductsTable(products = allProducts) {
                 if (Array.isArray(parsedImgs) && parsedImgs.length > 0) {
                     let rawUrl = parsedImgs[0];
                     if (rawUrl.startsWith('/uploads')) {
-                        // Kênh người bán mặc định dùng backend 5000
-                        const backendBaseUrl = API_BASE_URL.replace('/api', ''); 
-                        imgUrl = `${backendBaseUrl}${rawUrl}`;
+                        imgUrl = `${BACKEND_BASE_URL}${rawUrl}`;
                     } else {
                         imgUrl = rawUrl;
                     }

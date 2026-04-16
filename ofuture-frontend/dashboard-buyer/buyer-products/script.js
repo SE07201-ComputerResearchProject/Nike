@@ -4,6 +4,8 @@
 // ============================================================
 
 const API_BASE_URL = window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api';
+// Extract base URL for image uploads (remove /api suffix)
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '') || 'http://localhost:5000';
 let currentUser = null;
 let CART_KEY = 'cart';
 
@@ -103,22 +105,57 @@ function renderProducts(products) {
         const isOutOfStock = p.stock_quantity <= 0;
         
         // --- FIX ẢNH BUYER TẠI ĐÂY ---
-        let imgUrl = '../../images/image.png'; // Ảnh mặc định
-        if (p.imageUrls) {
-            try {
-                const parsedImgs = typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls) : p.imageUrls;
-                if (Array.isArray(parsedImgs) && parsedImgs.length > 0) {
-                    let rawUrl = parsedImgs[0];
-                    // Nếu là đường dẫn tương đối từ backend, nối thêm base url của backend
-                    if (rawUrl.startsWith('/uploads')) {
-                        const backendBaseUrl = API_BASE_URL.replace('/api', ''); // Tách 'http://localhost:5000' từ API_BASE_URL
-                        imgUrl = `${backendBaseUrl}${rawUrl}`;
-                    } else {
-                        imgUrl = rawUrl; // Dành cho trường hợp link http ngoài (imgur, cloudinary...)
-                    }
+        // let imgUrl = '../../uploads/image.png'; // Ảnh mặc định
+        // if (p.imageUrls) {
+        //     try {
+        //         const parsedImgs = typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls) : p.imageUrls;
+        //         if (Array.isArray(parsedImgs) && parsedImgs.length > 0) {
+        //             let rawUrl = parsedImgs[0];
+        //             // Nếu là đường dẫn tương đối từ backend, nối thêm base url của backend
+        //             if (rawUrl.startsWith('/uploads')) {
+        //                 const backendBaseUrl = API_BASE_URL.replace('/api', ''); // Tách 'http://localhost:5000' từ API_BASE_URL
+        //                 imgUrl = `${backendBaseUrl}${rawUrl}`;
+        //             } else {
+        //                 imgUrl = rawUrl; // Dành cho trường hợp link http ngoài (imgur, cloudinary...)
+        //             }
+        //         }
+        //     } catch (e) {}
+        // }
+        
+let imgUrl = '../../images/image.png'; // fallback đúng (ảnh local frontend)
+
+if (p.imageUrls) {
+    try {
+        let parsedImgs = typeof p.imageUrls === 'string' ? JSON.parse(p.imageUrls) : p.imageUrls;
+
+        if (Array.isArray(parsedImgs) && parsedImgs.length > 0) {
+            let rawUrl = parsedImgs[0];
+
+            if (rawUrl && typeof rawUrl === 'string') {
+                rawUrl = rawUrl.trim();
+
+                // 1. Link ngoài (imgur, cloudinary...)
+                if (/^https?:\/\//i.test(rawUrl)) {
+                    imgUrl = rawUrl;
                 }
-            } catch (e) {}
+                // 2. /uploads/abc.jpg
+                else if (rawUrl.startsWith('/uploads')) {
+                    imgUrl = `${BACKEND_BASE_URL}${rawUrl}`;
+                }
+                // 3. uploads/abc.jpg
+                else if (rawUrl.startsWith('uploads/')) {
+                    imgUrl = `${BACKEND_BASE_URL}/${rawUrl}`;
+                }
+                // 4. chỉ tên file: abc.jpg
+                else {
+                    imgUrl = `${BACKEND_BASE_URL}/uploads/${rawUrl}`;
+                }
+            }
         }
+    } catch (e) {
+        console.warn('Parse image error:', e);
+    }
+}
 
         return `
             <div class="product-card">

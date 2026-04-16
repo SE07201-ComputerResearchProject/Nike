@@ -73,6 +73,7 @@ const OrderModel = {
          o.final_total_amount as total_amount,
          o.created_at,
          (SELECT p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = o.id LIMIT 1) AS product_name,
+         (SELECT p.image_urls FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = o.id LIMIT 1) AS image_urls,
          (SELECT product_id FROM order_items WHERE order_id = o.id LIMIT 1) AS product_id,
          s.username AS seller_username
        FROM orders o

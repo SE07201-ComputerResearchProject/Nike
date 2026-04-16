@@ -2,6 +2,9 @@
 // O'Future Buyer - Profile Management (Sử dụng fetchAPI chuẩn)
 // ============================================================
 
+const API_BASE_URL = window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api';
+// Extract base URL for image uploads (remove /api suffix)
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '') || 'http://localhost:5000';
 let currentUser = null;
 
 // Hàm hiển thị thông báo (Toast)
@@ -45,8 +48,7 @@ async function loadProfile() {
             if (currentUser.avatarUrl) {
                 let imgUrl = currentUser.avatarUrl;
                 if (imgUrl.startsWith('/uploads')) {
-                    const backendBaseUrl = (window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api').replace('/api', '');
-                    imgUrl = backendBaseUrl + imgUrl;
+                    imgUrl = BACKEND_BASE_URL + imgUrl;
                 }
                 document.getElementById('avatarPreview').src = imgUrl;
             }
@@ -200,7 +202,7 @@ document.getElementById('avatarInput').addEventListener('change', async function
 
     try {
         const token = localStorage.getItem('accessToken');
-        const response = await fetch(`${window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api'}/auth/avatar`, {
+        const response = await fetch(`${API_BASE_URL}/auth/avatar`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }, // Bắt buộc không setup Content-Type để trình duyệt tự chèn boundary
             body: formData
@@ -208,7 +210,11 @@ document.getElementById('avatarInput').addEventListener('change', async function
         const result = await response.json();
 
         if (result.success) {
-            document.getElementById('avatarPreview').src = result.data.avatarUrl;
+            let imgUrl = result.data.avatarUrl;
+            if (imgUrl && imgUrl.startsWith('/uploads')) {
+                imgUrl = BACKEND_BASE_URL + imgUrl;
+            }
+            document.getElementById('avatarPreview').src = imgUrl;
             alert("Cập nhật ảnh đại diện thành công!");
         } else {
             alert("Lỗi: " + result.message);

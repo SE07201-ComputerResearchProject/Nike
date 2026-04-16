@@ -10,6 +10,9 @@ const CONFIG = {
     : 'https://your-production-api.com/api'
 };
 
+// Make CONFIG available globally
+window.CONFIG = CONFIG;
+
 async function fetchAPI(endpoint, options = {}) {
   const token = localStorage.getItem('accessToken');
   

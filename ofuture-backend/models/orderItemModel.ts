@@ -119,9 +119,12 @@ const getWithProducts = async (order_id: string): Promise<any[]> => {
        p.id as product_id,
        p.name as product_name,
        p.slug as product_slug,
-       p.image_urls
+       p.image_urls,
+       p.category,
+       u.username as seller_username
      FROM order_items oi
      JOIN products p ON oi.product_id = p.id
+     LEFT JOIN users u ON p.seller_id = u.id
      WHERE oi.order_id = ?
      ORDER BY oi.created_at ASC`,
     [order_id]

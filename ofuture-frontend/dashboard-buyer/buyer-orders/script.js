@@ -4,10 +4,26 @@
 // ============================================================
 
 const API_BASE_URL = window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api';
+// Extract base URL for image uploads (remove /api suffix)
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '') || 'http://localhost:5000';
 let currentUser = null;
 let allOrders = [];
 let currentStatus = 'all';
 let currentOrderIdForDispute = null;
+
+// Helper function to construct image URL
+function getImageUrl(imagePath) {
+    if (!imagePath) return `${BACKEND_BASE_URL}/uploads/placeholder.png`;
+    
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    // If it starts with /, prepend backend URL
+    if (imagePath.startsWith('/')) return `${BACKEND_BASE_URL}${imagePath}`;
+    
+    // Otherwise prepend /uploads/
+    return `${BACKEND_BASE_URL}/uploads/${imagePath}`;
+}
 
 // ── 1. Khởi tạo & Phân quyền ──────────────────────────────
 function checkAuth() {
@@ -79,22 +95,66 @@ function renderOrders() {
         const dateStr = new Date(order.createdAt || order.created_at || order.requested_at).toLocaleString('vi-VN');
         const badgeInfo = getStatusBadge(order.status);
         
+        // Lấy hình ảnh sản phẩm từ backend
+        // Backend returns image_urls as JSON array: ["/uploads/filename.png"] or JSON string
+        let productImage = getImageUrl(null); // Default placeholder
+        const rawImageUrls = order.image_urls || order.productImage || order.product_image || order.image;
+        
+        if (rawImageUrls && rawImageUrls !== 'null' && rawImageUrls !== null) {
+            try {
+                // Try parsing as JSON array if it's a string
+                if (typeof rawImageUrls === 'string' && rawImageUrls.trim().startsWith('[')) {
+                    const parsed = JSON.parse(rawImageUrls);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        productImage = getImageUrl(parsed[0]);
+                    }
+                } else if (typeof rawImageUrls === 'string' && rawImageUrls.trim()) {
+                    // Direct filename or path
+                    productImage = getImageUrl(rawImageUrls);
+                } else if (Array.isArray(rawImageUrls) && rawImageUrls.length > 0) {
+                    // Already parsed array
+                    productImage = getImageUrl(rawImageUrls[0]);
+                }
+            } catch (e) {
+                productImage = getImageUrl(null);
+            }
+        }
+        
+        const productName = order.productName || order.product_name || 'Sản phẩm không xác định';
+        const sellerName = order.sellerUsername || order.seller_username || order.chủ_shop || 'Cửa hàng';
+        
         return `
             <div class="card order-card">
-                <div class="order-header">
-                    <div>
-                        <div class="order-id">Mã giao dịch: #${order.id || order.sample_id}</div>
-                        <div class="order-date">Ngày tạo: ${dateStr}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px dashed #cbd5e1;">
+                    <div style="font-size: 13px; color: #64748b; font-weight: 500;">
+                        Cửa hàng: <strong style="color: #0f172a;">${sellerName}</strong>
                     </div>
-                    <div class="badge ${badgeInfo.class}">${badgeInfo.text}</div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div class="order-date">${dateStr}</div>
+                        <div class="badge ${badgeInfo.class}">${badgeInfo.text}</div>
+                    </div>
                 </div>
                 <div class="order-body">
-                    <div class="order-info">
-                        <p>ID Sản phẩm: ${order.product_id || 'N/A'}</p>
-                        ${order.quantity ? `<p>Số lượng: ${order.quantity}</p>` : ''}
+                    <div style="display: flex; gap: 16px; flex: 1;">
+                        <div style="flex-shrink: 0;">
+                            <img src="${productImage}" alt="${productName}" onerror="this.src='${BACKEND_BASE_URL}/uploads/placeholder.png'" style="width: 120px; height: 120px; border-radius: 8px; object-fit: cover; background: #f1f5f9;">
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                            <p style="margin-bottom: 12px; font-weight: 600; color: #0f172a; font-size: 15px;">${productName}</p>
+                            <div style="display: flex; gap: 24px;">
+                                <div>
+                                    <p style="margin: 0; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Số lượng</p>
+                                    <p style="margin: 0; font-weight: 600; color: #0f172a;">${order.quantity || 1}</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Đơn giá</p>
+                                    <p style="margin: 0; font-weight: 600; color: #0f172a;">${Number(order.unitPrice || 0).toLocaleString('vi-VN')} đ</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div style="text-align: right;">
-                        <p style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Tổng tiền</p>
+                    <div style="text-align: right; display: flex; flex-direction: column; justify-content: center;">
+                        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Tổng tiền</p>
                         <div class="order-total">${Number(amount).toLocaleString('vi-VN')} đ</div>
                     </div>
                 </div>
