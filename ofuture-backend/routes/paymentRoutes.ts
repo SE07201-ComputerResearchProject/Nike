@@ -35,11 +35,19 @@ const validateCreate = [
   validate
 ];
 
+const validateWalletCreate = [
+  body('orderId').notEmpty().withMessage('orderId required'),
+  body('amount').isNumeric().withMessage('Amount must be numeric'),
+  validate
+];
+
 // Tạo thanh toán MoMo (Chỉ Buyer)
 router.post('/momo/create', authorizeRoles('buyer'), validateCreate, paymentController.createMoMo);
 
 // Tạo thanh toán VietQR (Chỉ Buyer)
 router.post('/qr/create', authorizeRoles('buyer'), validateCreate, paymentController.createQR);
+
+router.post('/wallet/pay', authorizeRoles('buyer'), validateWalletCreate, paymentController.payWithWallet);
 
 // Lấy trạng thái thanh toán
 router.get('/:paymentId/status', param('paymentId').isUUID(), validate, paymentController.getStatus);

@@ -48,7 +48,8 @@ const transferFromEscrowRelease = async (
   amount: number,
   escrowId: string,
   orderId: string,
-  description?: string
+  description?: string,
+  externalConn?: any
 ): Promise<void> => {
   try {
     const wallet = await WalletModel.getOrCreateWallet(sellerId);
@@ -60,7 +61,8 @@ const transferFromEscrowRelease = async (
       amount,
       description || `Funds released from escrow`,
       escrowId,
-      'escrow_release'
+      'escrow_release',
+      externalConn
     );
 
     logger.info(`Wallet transfer from escrow: seller=${sellerId}, amount=${amount}, orderId=${orderId}`);

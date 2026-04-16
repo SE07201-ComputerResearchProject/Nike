@@ -3,11 +3,12 @@
 // ============================================================
 
 const API_BASE_URL = window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api';
-// Extract base URL for image uploads (remove /api suffix)
 const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '') || 'http://localhost:5000';
 let currentUser = null;
 let CART_KEY = 'cart';
 let currentProduct = null;
+let productVariants = [];
+let selectedVariant = null;
 
 // ── 1. Khởi tạo & Phân quyền ──────────────────────────────
 function checkAuth() {
@@ -61,6 +62,7 @@ async function fetchProductDetail() {
         if (response.ok && data.success) {
             currentProduct = data.data;
             renderProduct(currentProduct);
+            await fetchProductVariants(productId);
         } else {
             throw new Error("Không thể tải thông tin sản phẩm.");
         }
@@ -132,15 +134,27 @@ function changeQty(amount) {
 }
 
 window.handleAddToCart = function() {
-    if (!currentProduct || currentProduct.stockQuantity <= 0) return;
+    if (!currentProduct) return;
+    
+    // Lấy tồn kho dựa trên việc có biến thể hay không
+    const availableStock = selectedVariant 
+        ? (selectedVariant.stock_quantity ?? currentProduct.stockQuantity) 
+        : currentProduct.stockQuantity;
+
+    if (availableStock <= 0) return;
     
     const qty = parseInt(document.getElementById('qtyInput').value);
     let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-    const existingItem = cart.find(item => item.id === currentProduct.id);
+    
+    // Tạo cartItemId độc nhất: ghép id sản phẩm và id biến thể
+    const variantSuffix = selectedVariant ? `_${selectedVariant.id}` : '';
+    const cartItemId = `${currentProduct.id}${variantSuffix}`;
+
+    const existingItem = cart.find(item => item.cartItemId === cartItemId);
 
     if (existingItem) {
-        if (existingItem.quantity + qty > currentProduct.stockQuantity) {
-            showToast(`Bạn chỉ có thể mua tối đa ${currentProduct.stockQuantity} sản phẩm này!`, true);
+        if (existingItem.quantity + qty > availableStock) {
+            showToast(`Bạn chỉ có thể mua tối đa ${availableStock} sản phẩm phân loại này!`, true);
             return;
         }
         existingItem.quantity += qty;
@@ -150,28 +164,33 @@ window.handleAddToCart = function() {
             const parsed = typeof currentProduct.imageUrls === 'string' ? JSON.parse(currentProduct.imageUrls) : currentProduct.imageUrls;
             if (parsed && parsed.length > 0) {
                 let rawUrl = parsed[0];
-                if (rawUrl.startsWith('/uploads')) {
-                    imgUrl = `${BACKEND_BASE_URL}${rawUrl}`;
-                } else {
-                    imgUrl = rawUrl;
-                }
+                imgUrl = rawUrl.startsWith('/uploads') ? `${BACKEND_BASE_URL}${rawUrl}` : rawUrl;
             }
         } catch(e) {}
 
+        // Tính giá cuối cùng
+        const basePrice = parseFloat(currentProduct.price || 0);
+        const adjustment = selectedVariant ? parseFloat(selectedVariant.price_adjustment || 0) : 0;
+
         cart.push({
+            cartItemId: cartItemId, // ID dùng để gom nhóm trong giỏ
             id: currentProduct.id,
+            variantId: selectedVariant ? selectedVariant.id : null,
+            variantName: selectedVariant ? `${selectedVariant.attribute_name}: ${selectedVariant.attribute_value}` : '',
             name: currentProduct.name,
-            price: currentProduct.price,
+            price: basePrice + adjustment,
             image: imgUrl,
             sellerId: currentProduct.seller?.id,
-            stock: currentProduct.stockQuantity,
+            stock: availableStock,
             quantity: qty
         });
     }
 
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
     updateCartBadge();
-    showToast(`Đã thêm ${qty} sản phẩm vào giỏ!`);
+    
+    const variantText = selectedVariant ? ` (${selectedVariant.attribute_value})` : '';
+    showToast(`Đã thêm ${qty} sản phẩm${variantText} vào giỏ!`);
 }
 
 // ── 4. Yêu cầu hàng mẫu (Sample Request) ──────────────────
@@ -230,6 +249,114 @@ window.submitSampleRequest = async function() {
     } finally {
         btn.disabled = false;
         btn.textContent = "Gửi yêu cầu";
+    }
+}
+
+// ── 5. Xử lý Biến thể (Variants) ──────────────────────────
+
+async function fetchProductVariants(productId) {
+    try {
+        // Giả định API endpoint là /variants/product/:id (dựa theo code của Seller)
+        const response = await fetch(`${API_BASE_URL}/variants/product/${productId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+        });
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            productVariants = data.data || [];
+            renderVariantsUI();
+        }
+    } catch (error) {
+        console.error("Không thể tải biến thể sản phẩm:", error);
+    }
+}
+
+function renderVariantsUI() {
+    const container = document.getElementById('variantsContainer');
+    if (!container || productVariants.length === 0) {
+        if(container) container.innerHTML = '';
+        return;
+    }
+
+    // Nhóm các biến thể theo thuộc tính (VD: Tất cả size, Tất cả color)
+    const attributesGroup = {};
+    productVariants.forEach(variant => {
+        if (!attributesGroup[variant.attribute_name]) {
+            attributesGroup[variant.attribute_name] = [];
+        }
+        attributesGroup[variant.attribute_name].push(variant);
+    });
+
+    let html = '';
+    for (const [attrName, variantsArr] of Object.entries(attributesGroup)) {
+        html += `
+            <div class="variant-group" style="margin-bottom: 12px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 8px; color: #475569; text-transform: capitalize;">
+                    Chọn ${attrName}:
+                </label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        `;
+        
+        variantsArr.forEach(v => {
+            // Đặt biến thể đầu tiên làm mặc định nếu chưa có
+            if (!selectedVariant) selectedVariant = v;
+            
+            const isSelected = selectedVariant && selectedVariant.id === v.id;
+            
+            html += `
+                <button class="btn-variant" 
+                    onclick="selectVariant('${v.id}')"
+                    style="padding: 6px 14px; 
+                           border: 1px solid ${isSelected ? '#2563eb' : '#cbd5e1'}; 
+                           background: ${isSelected ? '#eff6ff' : '#fff'}; 
+                           color: ${isSelected ? '#2563eb' : '#334155'}; 
+                           border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+                           transition: all 0.2s;">
+                    ${v.attribute_value}
+                </button>
+            `;
+        });
+        html += `</div></div>`;
+    }
+    
+    container.innerHTML = html;
+    updatePriceAndStockByVariant();
+}
+
+window.selectVariant = function(variantId) {
+    selectedVariant = productVariants.find(v => String(v.id) === String(variantId));
+    renderVariantsUI(); // Render lại để cập nhật CSS nút được chọn
+}
+
+function updatePriceAndStockByVariant() {
+    if (!selectedVariant || !currentProduct) return;
+
+    // Tính toán lại giá (Giá gốc + Giá điều chỉnh của biến thể)
+    const basePrice = parseFloat(currentProduct.price || 0);
+    const adjustment = parseFloat(selectedVariant.price_adjustment || 0);
+    const finalPrice = basePrice + adjustment;
+
+    // Cập nhật giao diện
+    document.getElementById('productPrice').textContent = finalPrice.toLocaleString('vi-VN') + ' đ';
+    
+    // Ưu tiên hiển thị tồn kho của biến thể, nếu không có thì lấy tồn kho gốc
+    const stock = selectedVariant.stock_quantity ?? currentProduct.stockQuantity ?? 0;
+    document.getElementById('productStock').textContent = stock;
+
+    // Cập nhật trạng thái nút Thêm vào giỏ
+    const btn = document.getElementById('addCartBtn');
+    const qtyInput = document.getElementById('qtyInput');
+    
+    if (stock <= 0) {
+        btn.disabled = true;
+        btn.textContent = "Hết hàng phân loại này";
+        btn.style.background = "#cbd5e1";
+        qtyInput.disabled = true;
+    } else {
+        btn.disabled = false;
+        btn.textContent = "Thêm vào giỏ hàng";
+        btn.style.background = ""; // Reset về css gốc
+        qtyInput.disabled = false;
     }
 }
 

@@ -13,6 +13,7 @@ import UserModel from '../models/userModel';
 import { uploadImages } from '../middleware/upload';
 import { validationResult } from 'express-validator';
 import { pool } from '../config/db';
+import NotificationService from '../services/notificationService';
 const { register, login, refreshToken, logout, getMe, verifyEmail, resendOtp, googleLogin, uploadAvatar, getDevices, revokeDevice } = require('../controllers/authController');
 const { authenticate }     = require('../middleware/auth');
 const { noCache, autobanCheck } = require('../middleware/security');
@@ -83,6 +84,13 @@ router.put(
     const { fullName, phone, role, address, city, store_name, category, scale } = req.body;
     const userId = req.user.id;
 
+    if (req.user.role === 'seller') {
+      return res.status(403).json({
+        success: false,
+        message: 'Thông tin seller không được đổi trực tiếp. Vui lòng gửi yêu cầu duyệt tới Admin.'
+      });
+    }
+
     // Lấy kết nối riêng để chạy Transaction (Đảm bảo ghi vào 2 bảng cùng lúc an toàn)
     const connection = await pool.getConnection();
 
@@ -144,6 +152,119 @@ router.put(
       res.status(500).json({ success: false, message: 'Update failed due to server error.' });
     } finally {
       // Trả connection về pool
+      connection.release();
+    }
+  }
+);
+
+// POST /api/auth/profile-change-request
+// Seller submits profile change request for admin approval.
+router.post(
+  '/profile-change-request',
+  authenticate,
+  [
+    body('fullName').optional().trim().isLength({ min: 2, max: 150 }).escape(),
+    body('phone').optional().isMobilePhone('any').withMessage('Invalid phone number.'),
+    body('address').optional().trim().escape(),
+    body('city').optional().trim().escape(),
+    body('store_name').optional().trim().escape(),
+    body('category').optional().trim().escape(),
+    body('scale').optional().trim().escape(),
+  ],
+  async (req: any, res: Response): Promise<any> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const { fullName, phone, address, city, store_name, category, scale } = req.body;
+
+    if (userRole !== 'seller') {
+      return res.status(403).json({
+        success: false,
+        message: 'Chỉ tài khoản seller mới cần gửi yêu cầu duyệt thay đổi hồ sơ.'
+      });
+    }
+
+    const requestedChanges = {
+      fullName: fullName ?? null,
+      phone: phone ?? null,
+      address: address ?? null,
+      city: city ?? null,
+      store_name: store_name ?? null,
+      category: category ?? null,
+      scale: scale ?? null
+    };
+
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      await connection.execute(`
+        CREATE TABLE IF NOT EXISTS seller_profile_change_requests (
+          id CHAR(36) NOT NULL DEFAULT (UUID()),
+          seller_id CHAR(36) NOT NULL,
+          requested_changes JSON NOT NULL,
+          status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+          admin_note TEXT NULL,
+          reviewed_by CHAR(36) NULL,
+          reviewed_at DATETIME NULL,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          INDEX idx_spcr_seller (seller_id),
+          INDEX idx_spcr_status (status),
+          CONSTRAINT fk_spcr_seller FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      const [pendingRows]: any = await connection.execute(
+        `SELECT id FROM seller_profile_change_requests
+         WHERE seller_id = ? AND status = 'pending'
+         ORDER BY created_at DESC LIMIT 1`,
+        [userId]
+      );
+
+      if (pendingRows.length > 0) {
+        await connection.rollback();
+        return res.status(409).json({
+          success: false,
+          message: 'Bạn đã có một yêu cầu thay đổi hồ sơ đang chờ Admin duyệt.'
+        });
+      }
+
+      await connection.execute(
+        `INSERT INTO seller_profile_change_requests (id, seller_id, requested_changes, status)
+         VALUES (UUID(), ?, ?, 'pending')`,
+        [userId, JSON.stringify(requestedChanges)]
+      );
+
+      const [admins]: any = await connection.execute(
+        `SELECT id FROM users WHERE role = 'admin' AND is_active = 1`
+      );
+
+      await connection.commit();
+
+      for (const admin of admins) {
+        await NotificationService.sendAlert(
+          admin.id,
+          'Yêu cầu đổi hồ sơ seller',
+          `Seller ${userId.slice(0, 8)}... vừa gửi yêu cầu thay đổi hồ sơ, cần duyệt.`,
+          '/admin/users'
+        );
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Yêu cầu thay đổi hồ sơ đã được gửi. Vui lòng chờ Admin duyệt.'
+      });
+    } catch (err) {
+      await connection.rollback();
+      console.error('profile-change-request error:', err);
+      return res.status(500).json({ success: false, message: 'Không thể gửi yêu cầu thay đổi hồ sơ.' });
+    } finally {
       connection.release();
     }
   }

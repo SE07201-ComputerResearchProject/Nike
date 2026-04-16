@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadDisputes() {
   try {
-    const response = await fetchAPI('/disputes?role=seller');
+    const response = await fetchAPI('/seller/disputes');
     
     if (!response.success) {
       throw new Error(response.message || 'Lỗi tải danh sách tranh chấp');
@@ -107,7 +107,7 @@ function renderDisputeCard(dispute) {
           </div>
           <div class="dispute-info-item">
             <label>Người mua:</label>
-            <span>${dispute.buyer_name || 'N/A'}</span>
+            <span>${dispute.complainant_username || 'N/A'}</span>
           </div>
           <div class="dispute-info-item">
             <label>Ngày tạo:</label>

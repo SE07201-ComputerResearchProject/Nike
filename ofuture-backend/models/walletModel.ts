@@ -91,12 +91,14 @@ const addTransaction = async (
   amount: number,
   description?: string,
   referenceId?: string,
-  referenceType?: string
+  referenceType?: string,
+  externalConn?: any
 ): Promise<WalletTransaction> => {
   const conn: any = await pool.getConnection();
+  const shouldCommit = !externalConn;
 
   try {
-    await conn.beginTransaction();
+    if (shouldCommit) await conn.beginTransaction();
 
     const transactionId = require('crypto').randomUUID();
 
@@ -110,6 +112,8 @@ const addTransaction = async (
       // For adjustments, amount can be positive or negative
       balanceChange = amount;
     }
+
+    
 
     // Insert transaction
     await conn.execute(
@@ -134,7 +138,7 @@ const addTransaction = async (
       [balanceChange, walletId]
     );
 
-    await conn.commit();
+    if (shouldCommit) await conn.commit();
 
     return {
       id: transactionId,
@@ -150,10 +154,10 @@ const addTransaction = async (
       updated_at: new Date(),
     };
   } catch (error) {
-    await conn.rollback();
+    if (shouldCommit) await conn.rollback();
     throw error;
   } finally {
-    conn.release();
+    if (shouldCommit) conn.release();
   }
 };
 

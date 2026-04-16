@@ -2,6 +2,11 @@
 
 let currentPage = 1;
 const pageSize = 10;
+const formatVND = (value) => `${Number(value || 0).toLocaleString('vi-VN')} Đ`;
+
+function getAuthToken() {
+  return localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
+}
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -25,11 +30,11 @@ async function loadWalletBalance() {
   try {
     const response = await fetch('/api/wallet/balance', {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${getAuthToken()}`
       }
     });
 
-    if (!response.ok) throw new Error('Failed to load wallet balance');
+    if (!response.ok) throw new Error('Không thể tải số dư ví');
 
     const data = await response.json();
     if (data.success) {
@@ -54,11 +59,11 @@ async function loadTransactions() {
 
     const response = await fetch(`/api/wallet/transactions?${params}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${getAuthToken()}`
       }
     });
 
-    if (!response.ok) throw new Error('Failed to load transactions');
+    if (!response.ok) throw new Error('Không thể tải lịch sử giao dịch');
 
     const data = await response.json();
     if (data.success) {
@@ -76,11 +81,11 @@ async function loadStats() {
   try {
     const response = await fetch('/api/wallet/transactions?limit=1000&page=1', {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${getAuthToken()}`
       }
     });
 
-    if (!response.ok) throw new Error('Failed to load stats');
+    if (!response.ok) throw new Error('Không thể tải thống kê ví');
 
     const data = await response.json();
     if (data.success) {
@@ -96,8 +101,8 @@ async function loadStats() {
         }
       });
 
-      document.getElementById('totalIncome').textContent = `${Number(totalIncome).toLocaleString('vi-VN')} đ`;
-      document.getElementById('totalWithdrawn').textContent = `${Number(totalWithdrawn).toLocaleString('vi-VN')} đ`;
+      document.getElementById('totalIncome').textContent = formatVND(totalIncome);
+      document.getElementById('totalWithdrawn').textContent = formatVND(totalWithdrawn);
     }
   } catch (error) {
     console.error('Error loading stats:', error);
@@ -226,11 +231,11 @@ async function showTransactionDetail(transactionId) {
   try {
     const response = await fetch(`/api/wallet/transactions/${transactionId}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${getAuthToken()}`
       }
     });
 
-    if (!response.ok) throw new Error('Failed to load transaction detail');
+    if (!response.ok) throw new Error('Không thể tải chi tiết giao dịch');
 
     const data = await response.json();
     if (data.success) {
@@ -238,7 +243,7 @@ async function showTransactionDetail(transactionId) {
       showToast(`
         ${getTransactionType(txn.type)}: ${txn.formattedAmount}
         ${txn.description ? '\n' + txn.description : ''}
-        Status: ${txn.status}
+        Trạng thái: ${txn.status}
       `, 'info');
     }
   } catch (error) {
@@ -271,7 +276,7 @@ async function handleWithdraw(e) {
   const bankAccount = document.getElementById('bankAccount').value;
 
   if (!amount || amount < 100000) {
-    showToast('Số tiền tối thiểu là 100,000 đ', 'error');
+    showToast('Số tiền tối thiểu là 100,000 Đ', 'error');
     return;
   }
 

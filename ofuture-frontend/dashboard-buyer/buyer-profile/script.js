@@ -370,38 +370,5 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadProfile();
-    if (typeof loadOrderStats === 'function') loadOrderStats();
-});
-
+document.addEventListener('DOMContentLoaded', loadProfile);
 function closeMFAModal() { document.getElementById('mfaModal').style.display = 'none'; }
-
-// Load order statistics and update DOM elements
-async function loadOrderStats() {
-    try {
-        const apiBase = window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api';
-        const token = localStorage.getItem('accessToken');
-        const res = await fetch(`${apiBase}/orders/my?limit=100`, {
-            headers: {
-                'Authorization': token ? `Bearer ${token}` : ''
-            }
-        });
-        const data = await res.json();
-
-        // Normalize response: if API uses { success, data } pattern
-        const orders = Array.isArray(data) ? data : (data.data && Array.isArray(data.data) ? data.data : []);
-
-        const pendingCount = orders.filter(o => o.status === 'pending').length;
-        const escrowTotal = orders
-            .filter(o => o.status === 'paid' || o.status === 'shipped')
-            .reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
-
-        const pendingEl = document.getElementById('statPendingOrders');
-        const escrowEl = document.getElementById('statEscrowAmount');
-        if (pendingEl) pendingEl.textContent = String(pendingCount);
-        if (escrowEl) escrowEl.textContent = new Intl.NumberFormat('vi-VN').format(escrowTotal) + ' đ';
-    } catch (err) {
-        console.error('loadOrderStats error', err);
-    }
-}

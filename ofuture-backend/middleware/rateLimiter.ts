@@ -69,7 +69,13 @@ const createLimiter = ({
       legacyHeaders: false,
       store: undefined,
       keyGenerator: (req: Request) => `${keyPrefix}${getClientIp(req)}`,
-      skip: (req: Request) => skipPaths.some((p) => req.path === p),
+      skip: (req: Request) => {
+        const ip = getClientIp(req) || req.ip || '';
+        if (ip === '::1' || ip === '127.0.0.1' || ip.includes('127.0.0.1')) {
+          return true; 
+        }
+        return skipPaths.some((p) => req.path === p);
+      },
       handler: (req: Request, res: Response) => {
         const ip = getClientIp(req);
         logger.warn(
@@ -128,7 +134,13 @@ const createLimiter = ({
     legacyHeaders: false,
     store,
     keyGenerator: (req: Request) => `${keyPrefix}${getClientIp(req)}`,
-    skip: (req: Request) => skipPaths.some((p) => req.path === p),
+    skip: (req: Request) => {
+      const ip = getClientIp(req) || req.ip || '';
+      if (ip === '::1' || ip === '127.0.0.1' || ip.includes('127.0.0.1')) {
+        return true; 
+      }
+      return skipPaths.some((p) => req.path === p);
+    },
     handler: (req: Request, res: Response) => {
       const ip = getClientIp(req);
       logger.warn(

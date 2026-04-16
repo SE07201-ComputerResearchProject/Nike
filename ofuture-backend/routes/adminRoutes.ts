@@ -7,6 +7,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { param, body, query, validationResult } from 'express-validator';
 import { pool } from '../config/db';
+import NotificationService from '../services/notificationService';
 
 const {
   getDashboardStats,
@@ -60,6 +61,158 @@ const uuidParam = (name = 'id') => [
 // DASHBOARD
 // ─────────────────────────────────────────────
 router.get('/stats', getDashboardStats);
+
+// ─────────────────────────────────────────────
+// SELLER PROFILE CHANGE REQUESTS
+// ─────────────────────────────────────────────
+router.get('/seller-profile-change-requests', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS seller_profile_change_requests (
+        id CHAR(36) NOT NULL DEFAULT (UUID()),
+        seller_id CHAR(36) NOT NULL,
+        requested_changes JSON NOT NULL,
+        status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+        admin_note TEXT NULL,
+        reviewed_by CHAR(36) NULL,
+        reviewed_at DATETIME NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        INDEX idx_spcr_seller (seller_id),
+        INDEX idx_spcr_status (status),
+        CONSTRAINT fk_spcr_seller FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    const [rows]: any = await pool.execute(
+      `SELECT r.id, r.seller_id, r.requested_changes, r.status, r.admin_note,
+              r.reviewed_by, r.reviewed_at, r.created_at,
+              u.username AS seller_username, u.full_name AS seller_full_name
+       FROM seller_profile_change_requests r
+       JOIN users u ON u.id = r.seller_id
+       ORDER BY r.created_at DESC`
+    );
+
+    return res.status(200).json({ success: true, data: rows });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch seller profile change requests.' });
+  }
+});
+
+router.put(
+  '/seller-profile-change-requests/:id',
+  [
+    param('id').isUUID().withMessage('id must be a valid UUID.'),
+    body('decision').isIn(['approved', 'rejected']).withMessage('decision must be approved or rejected.'),
+    body('adminNote').optional().trim().isLength({ max: 1000 }).escape(),
+    validate,
+  ],
+  async (req: any, res: Response): Promise<any> => {
+    const requestId = req.params.id;
+    const { decision, adminNote } = req.body;
+    const adminId = req.user.id;
+    const conn: any = await pool.getConnection();
+
+    try {
+      await conn.beginTransaction();
+
+      await conn.execute(`
+        CREATE TABLE IF NOT EXISTS seller_profile_change_requests (
+          id CHAR(36) NOT NULL DEFAULT (UUID()),
+          seller_id CHAR(36) NOT NULL,
+          requested_changes JSON NOT NULL,
+          status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+          admin_note TEXT NULL,
+          reviewed_by CHAR(36) NULL,
+          reviewed_at DATETIME NULL,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          INDEX idx_spcr_seller (seller_id),
+          INDEX idx_spcr_status (status),
+          CONSTRAINT fk_spcr_seller FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      const [[reqRow]]: any = await conn.execute(
+        `SELECT * FROM seller_profile_change_requests WHERE id = ? FOR UPDATE`,
+        [requestId]
+      );
+
+      if (!reqRow) {
+        await conn.rollback();
+        return res.status(404).json({ success: false, message: 'Request not found.' });
+      }
+      if (reqRow.status !== 'pending') {
+        await conn.rollback();
+        return res.status(409).json({ success: false, message: `Request already ${reqRow.status}.` });
+      }
+
+      if (decision === 'approved') {
+        const changes = typeof reqRow.requested_changes === 'string'
+          ? JSON.parse(reqRow.requested_changes)
+          : (reqRow.requested_changes || {});
+
+        const userUpdates: string[] = [];
+        const userValues: any[] = [];
+        if (changes.fullName) { userUpdates.push('full_name = ?'); userValues.push(changes.fullName); }
+        if (changes.phone) { userUpdates.push('phone = ?'); userValues.push(changes.phone); }
+        if (userUpdates.length > 0) {
+          userValues.push(reqRow.seller_id);
+          await conn.execute(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`, userValues);
+        }
+
+        await conn.execute(
+          `INSERT INTO user_profiles (user_id, address, city, store_name, category, scale)
+           VALUES (?, ?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE
+             address = VALUES(address),
+             city = VALUES(city),
+             store_name = VALUES(store_name),
+             category = VALUES(category),
+             scale = VALUES(scale)`,
+          [
+            reqRow.seller_id,
+            changes.address || null,
+            changes.city || null,
+            changes.store_name || null,
+            changes.category || null,
+            changes.scale || 'small'
+          ]
+        );
+      }
+
+      await conn.execute(
+        `UPDATE seller_profile_change_requests
+         SET status = ?, admin_note = ?, reviewed_by = ?, reviewed_at = NOW()
+         WHERE id = ?`,
+        [decision, adminNote || null, adminId, requestId]
+      );
+
+      await conn.commit();
+
+      await NotificationService.sendAlert(
+        reqRow.seller_id,
+        'Kết quả duyệt hồ sơ seller',
+        decision === 'approved'
+          ? 'Yêu cầu cập nhật hồ sơ của bạn đã được Admin duyệt.'
+          : `Yêu cầu cập nhật hồ sơ bị từ chối.${adminNote ? ` Lý do: ${adminNote}` : ''}`,
+        '/dashboard-seller/indexSeller.html'
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: decision === 'approved' ? 'Request approved and profile updated.' : 'Request rejected.'
+      });
+    } catch (err) {
+      await conn.rollback();
+      return res.status(500).json({ success: false, message: 'Failed to review request.' });
+    } finally {
+      conn.release();
+    }
+  }
+);
 
 // ─────────────────────────────────────────────
 // USER MANAGEMENT

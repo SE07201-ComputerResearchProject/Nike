@@ -252,7 +252,7 @@ const login = async (req: AuthRequest, res: Response): Promise<any> => {
       data    : {
         accessToken,
         refreshToken : rawRefresh,
-        expiresIn    : process.env.JWT_EXPIRES_IN || '15m',
+        expiresIn    : process.env.JWT_EXPIRES_IN || '1h',
         user         : {
           id         : user.id,
           email      : user.email,

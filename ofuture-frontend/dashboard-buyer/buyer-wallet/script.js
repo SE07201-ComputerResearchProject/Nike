@@ -1,17 +1,43 @@
 // dashboard-buyer/buyer-wallet/script.js
 
+const API_BASE_URL = window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api';
 let currentPage = 1;
 const pageSize = 10;
 let selectedPaymentMethod = null;
 
-// Initialize on page load
+// ── 1. HÀM HỖ TRỢ: LẤY TOKEN VÀ KIỂM TRA ĐĂNG NHẬP ──
+function getToken() {
+  // Quét cả 2 key để tránh lỗi bất nhất tên biến giữa các trang
+  return localStorage.getItem('accessToken') || localStorage.getItem('token');
+}
+
+function checkAuth() {
+  const token = getToken();
+  const userStr = localStorage.getItem('user');
+  
+  if (!token || !userStr) { 
+    window.location.href = '../../login.html'; 
+    return false; 
+  }
+  
+  // Hiển thị Avatar góc phải
+  const currentUser = JSON.parse(userStr);
+  const nameToUse = currentUser.fullName || currentUser.full_name || currentUser.username || 'U';
+  const avatarEl = document.getElementById('headerAvatar');
+  if (avatarEl) avatarEl.textContent = nameToUse.charAt(0).toUpperCase();
+  
+  return true;
+}
+
+// ── 2. KHỞI TẠO TRANG ──
 document.addEventListener('DOMContentLoaded', async () => {
+  if (!checkAuth()) return; // Dừng chạy API nếu chưa đăng nhập
+
   await loadWalletBalance();
   await loadTransactions();
   setupEventListeners();
 });
 
-// Setup event listeners
 function setupEventListeners() {
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('typeFilter').addEventListener('change', () => {
@@ -24,9 +50,9 @@ function setupEventListeners() {
 // Load wallet balance
 async function loadWalletBalance() {
   try {
-    const response = await fetch('/api/wallet/balance', {
+    const response = await fetch(`${API_BASE_URL}/wallet/balance`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${getToken()}`
       }
     });
 
@@ -51,9 +77,9 @@ async function loadTransactions() {
       limit: pageSize
     });
 
-    const response = await fetch(`/api/wallet/transactions?${params}`, {
+    const response = await fetch(`${API_BASE_URL}/wallet/transactions?${params}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${getToken()}`
       }
     });
 
@@ -194,9 +220,10 @@ function nextPage() {
 // Show transaction detail
 async function showTransactionDetail(transactionId) {
   try {
-    const response = await fetch(`/api/wallet/transactions/${transactionId}`, {
+    const response = await fetch(`${API_BASE_URL}/wallet/transactions/${transactionId}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
       }
     });
 
@@ -262,15 +289,16 @@ async function processDeposit() {
   }
 
   try {
-    // Call payment service to create payment request
-    const response = await fetch(`/api/payments/${selectedPaymentMethod}/create`, {
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const response = await fetch(`${API_BASE_URL}/payments/${selectedPaymentMethod}/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${getToken()}`
       },
       body: JSON.stringify({
-        amount: parseInt(amount)
+        amount: parseInt(amount),
+        orderId: currentUser.id // BẮT BUỘC THÊM DÒNG NÀY (Xem giải thích ở Bước 3)
       })
     });
 
@@ -321,17 +349,20 @@ async function handleWithdraw(e) {
 // Utility functions
 function formatDate(dateString) {
   const date = new Date(dateString);
+  const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = date.toLocaleDateString('vi-VN');
+  
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
   if (date.toDateString() === today.toDateString()) {
-    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    return `Hôm nay, ${timeStr}`;
   } else if (date.toDateString() === yesterday.toDateString()) {
-    return 'Hôm qua';
+    return `Hôm qua, ${timeStr}`;
   }
-
-  return date.toLocaleDateString('vi-VN');
+  // Sẽ hiển thị dạng: 14:30 - 15/04/2026
+  return `${timeStr} - ${dateStr}`; 
 }
 
 function showToast(message, type = 'info') {
@@ -354,8 +385,9 @@ function showToast(message, type = 'info') {
 
 function logout() {
   localStorage.removeItem('token');
+  localStorage.removeItem('accessToken');
   localStorage.removeItem('user');
-  window.location.href = '/login.html';
+  window.location.href = '../../login.html';
 }
 
 // Close modal when clicking outside

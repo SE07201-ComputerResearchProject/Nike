@@ -14,6 +14,7 @@ import rateLimit from 'express-rate-limit';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 const sampleRoutes = require('./routes/sampleRoutes');
+import { startAutoReleaseWorker } from './services/autoReleaseService';
 
 // Mở rộng interface Request của Express để TypeScript nhận diện req.requestId
 declare global {
@@ -52,7 +53,7 @@ const paymentRoutes  = require('./routes/paymentRoutes');
 const walletRoutes   = require('./routes/walletRoutes');    // Task 1: Wallet & Payment
 const sellerRoutes = require('./routes/sellerRoutes');
 // Disabled category/productVariant routes for now (broken TS/runtime) to allow server startup
-// const categoryRoutes = require('./routes/categoryRoutes');  // Task 3: Categories
+const categoryRoutes = require('./routes/categoryRoutes');  // Task 3: Categories
 const productVariantRoutes = require('./routes/productVariantRoutes');  // Task 3: Variants
 const notificationRoutes = require('./routes/notificationRoutes');  // Task 5: Notifications
 const disputeRoutes = require('./routes/disputeRoutes');  // Task 4: Disputes
@@ -118,7 +119,7 @@ app.use(cors({
 // ────────────────────────────────────────────
 const globalLimiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 min
-  max: Number(process.env.RATE_LIMIT_MAX) || 100,
+  max: Number(process.env.RATE_LIMIT_MAX) || 100000,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -131,7 +132,7 @@ const globalLimiter = rateLimit({
   },
 });
 
-app.use(globalLimiter);
+// app.use(globalLimiter);
 
 // ────────────────────────────────────────────
 // 3. BODY PARSING
@@ -222,7 +223,7 @@ const normalizeRouter = (r: any) => (r && r.default) ? r.default : r;
 app.use('/api/auth',     normalizeRouter(authRoutes));
 app.use('/api/products', normalizeRouter(productRoutes));     // Phase 5
 // Disabled categoryRoutes temporarily to allow dev server startup while debugging
-// app.use('/api/categories', normalizeRouter(categoryRoutes));  // Task 3: Categories
+app.use('/api/categories', normalizeRouter(categoryRoutes));  // Task 3: Categories
 // Disabled productVariantRoutes temporarily to allow dev server startup
 app.use('/api/variants', normalizeRouter(productVariantRoutes));  // Task 3: Variants
 
@@ -306,6 +307,8 @@ const startServer = async () => {
 
   // Initialize WebSocket server
   webSocketService.initializeIO(server);
+
+  startAutoReleaseWorker();
 };
 
 startServer();

@@ -39,7 +39,7 @@ function completeLoginFlow(userData) {
   } else {
   if (userRole === 'admin') redirectUrl = 'dashboard-admin/indexAdmin.html';
   else if (userRole === 'seller') redirectUrl = 'dashboard-seller/indexSeller.html';
-  else redirectUrl = 'dashboard-buyer/buyer-home/index.html';
+  else redirectUrl = 'dashboard-buyer/buyer-products/index.html';
   }
   setTimeout(() => { window.location.href = redirectUrl; }, 1000);
 }

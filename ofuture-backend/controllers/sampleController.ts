@@ -4,6 +4,7 @@ import { SampleModel } from '../models/sampleModel';
 import ProductModel from '../models/productModel';
 import OrderModel from '../models/orderModel';
 import logger from '../utils/logger';
+import WalletService from '../services/walletService';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -104,6 +105,20 @@ const updateSampleStatus = async (req: AuthRequest, res: Response): Promise<any>
     const validStatuses = ['approved', 'rejected', 'shipped', 'cancelled', 'returned'];
     if (!validStatuses.includes(status as string)) {
       return res.status(400).json({ success: false, message: 'Invalid status provided.' });
+    }
+
+    if (status === 'approved') {
+      // Tự động sinh ra một Order đặc biệt cho Hàng mẫu
+      await OrderModel.create({
+        buyerId: sample.buyer_id,
+        sellerId: sample.seller_id,
+        productId: sample.product_id,
+        quantity: 1,
+        unitPrice: parseFloat(sample.deposit_amount as any),
+        totalAmount: parseFloat(sample.deposit_amount as any),
+        shippingAddress: 'Giao theo địa chỉ mặc định của Buyer (Hàng mẫu)', // Hoặc fetch từ user profile
+        notes: `[IS_SAMPLE] Đơn hàng tự động sinh từ Yêu cầu Hàng mẫu #${sampleId}`
+      });
     }
 
     await SampleModel.updateStatus(sampleId, status as string);

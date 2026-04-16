@@ -25,6 +25,7 @@ import { LogModel, LOG_EVENTS } from '../models/logModel';
 import NotificationService from '../services/notificationService';
 import logger from '../utils/logger';
 import orderService from '../services/orderService';
+import WalletService from '../services/walletService';
 
 interface OrderRequest extends Request {
   user?: any;
@@ -344,6 +345,26 @@ const cancelOrder = async (req: OrderRequest, res: Response): Promise<any> => {
 
     await conn.commit();
 
+    // Nếu đơn hàng đã trả tiền (paid/shipped), tiến hành hoàn tiền vào ví Buyer
+    if (['paid', 'shipped'].includes(order.status)) {
+      const [[escrow]]: any = await pool.execute(
+        'SELECT * FROM escrow_transactions WHERE order_id = ? LIMIT 1', [id]
+      );
+      if (escrow) {
+        try {
+          await WalletService.refundFromEscrow(
+            order.buyer_id,
+            parseFloat(escrow.amount),
+            escrow.id,
+            id,
+            reason ?? 'Hoàn tiền do hủy đơn hàng'
+          );
+        } catch (walletErr) {
+          logger.error('Wallet refund to buyer failed:', walletErr);
+        }
+      }
+    }
+
     await LogModel.write({
       ...ctx(req),
       eventType : LOG_EVENTS.ORDER_CANCELLED,
@@ -464,13 +485,19 @@ const confirmDelivery = async (req: OrderRequest, res: Response): Promise<any> =
       });
     }
 
-    // Mark order as completed
+    // 1. Lấy thông tin Escrow để biết số tiền thực nhận của Seller (sau khi trừ phí)
+    const [[escrow]]: any = await conn.execute(
+      'SELECT * FROM escrow_transactions WHERE order_id = ? FOR UPDATE',
+      [id]
+    );
+
+    // 2. Mark order as completed
     await conn.execute(
       `UPDATE orders SET status = 'completed', completed_at = NOW() WHERE id = ?`,
       [id]
     );
 
-    // Release escrow funds to seller
+    // 3. Release escrow funds
     await conn.execute(
       `UPDATE escrow_transactions
        SET status = 'released', released_at = NOW(),
@@ -479,7 +506,31 @@ const confirmDelivery = async (req: OrderRequest, res: Response): Promise<any> =
       [id]
     );
 
-    await conn.commit();
+    // 4. CHUYỂN TIỀN VÀO VÍ SELLER
+    if (escrow) {
+      try {
+        await WalletService.transferFromEscrowRelease(
+          order.seller_id,
+          parseFloat(escrow.net_amount), // Chuyển số tiền thực nhận (đã trừ phí)
+          escrow.id,
+          id,
+          `Tiền bán hàng từ đơn ${id}`,
+          conn
+        );
+
+        // Tùy chọn: Ghi nhận phí nền tảng hiển thị trong lịch sử ví Seller
+        await WalletService.applyPlatformFee(
+          order.seller_id,
+          parseFloat(escrow.platform_fee),
+          escrow.id,
+          id
+        );
+      } catch (walletErr) {
+        logger.error('Wallet release to seller failed:', walletErr);
+      }
+    }
+
+    await conn.commit(); 
 
     const [[firstItem]]: any = await conn.execute(
       'SELECT p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ? LIMIT 1',

@@ -632,6 +632,7 @@ INSERT IGNORE INTO knowledge_base (id, topic, content) VALUES
 
 CREATE TABLE payments (
   id VARCHAR(36) PRIMARY KEY,
+  user_id CHAR(36) NOT NULL,
   order_id VARCHAR(36) NOT NULL,
   method ENUM('cod', 'momo', 'qr') NOT NULL,
   amount DECIMAL(10, 2) NOT NULL,
@@ -728,6 +729,31 @@ CREATE TABLE IF NOT EXISTS notifications (
   INDEX idx_user_created (user_id, created_at DESC),
   CONSTRAINT fk_notif_user FOREIGN KEY (user_id)
     REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: seller_profile_change_requests
+-- Seller profile changes must be approved by admin.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS seller_profile_change_requests (
+  id                CHAR(36)        NOT NULL DEFAULT (UUID()),
+  seller_id         CHAR(36)        NOT NULL,
+  requested_changes JSON            NOT NULL,
+  status            ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  admin_note        TEXT            NULL,
+  reviewed_by       CHAR(36)        NULL,
+  reviewed_at       DATETIME        NULL,
+  created_at        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                    ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  INDEX idx_spcr_seller (seller_id),
+  INDEX idx_spcr_status (status),
+  CONSTRAINT fk_spcr_seller FOREIGN KEY (seller_id)
+    REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_spcr_admin FOREIGN KEY (reviewed_by)
+    REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Re-enable foreign key checks

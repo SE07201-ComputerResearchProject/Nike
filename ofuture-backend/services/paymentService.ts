@@ -118,28 +118,47 @@ const transferToSeller = async ({ sellerId, amount, currency = 'USD', orderId }:
 // ═════════════════════════════════════════════
 
 const createMoMoPayment = async (orderId: string, amount: number) => {
- const [orders]: any = await pool.execute('SELECT id, status FROM orders WHERE id = ? OR notes LIKE ?', [orderId, `%BATCH:${orderId}%`]);
-  if (orders.length === 0) throw new Error('Order not found');
-  if (orders.some((o: any) => o.status !== 'pending')) throw new Error('Có đơn hàng không ở trạng thái pending.');
+  let actualUserId = null;
+  let isTopup = false;
+
+  // 1. Kiểm tra xem orderId gửi lên có phải là ID của User không (Trường hợp nạp ví)
+  const [users]: any = await pool.execute('SELECT id FROM users WHERE id = ?', [orderId]);
+  if (users.length > 0) {
+    isTopup = true;
+    actualUserId = users[0].id;
+  } else {
+    // 2. Nếu không phải ID user thì đây là đơn hàng
+    const [orders]: any = await pool.execute('SELECT id, buyer_id, status FROM orders WHERE id = ? OR notes LIKE ?', [orderId, `%BATCH:${orderId}%`]);
+    if (orders.length === 0) throw new Error('Order not found');
+    if (orders.some((o: any) => o.status !== 'pending')) throw new Error('Có đơn hàng không ở trạng thái pending.');
+    actualUserId = orders[0].buyer_id;
+  }
+
   const momoResponse = await MoMoClient.createPaymentRequest({
-    orderId,
+    orderId, // Truyền nguyên gốc (MoMoClient sẽ tự nối thêm _timestamp)
     amount,
-    orderInfo: `Thanh toan don hang ${orderId}`,
+    orderInfo: isTopup ? `Nap tien vao vi` : `Thanh toan don hang ${orderId}`,
   });
 
-  const paymentId = await PaymentModel.create({
-    orderId,
-    method: 'momo',
-    amount,
-    status: 'pending',
-    paymentData: {
-      requestId: momoResponse.requestId,
-      payUrl: momoResponse.payUrl,
-      deeplink: momoResponse.deeplink,
-      qrCodeUrl: momoResponse.qrCodeUrl,
-    },
-    expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-  });
+  // 3. Insert trực tiếp vào DB để đảm bảo lưu đúng user_id và isTopup flag
+  const paymentId = uuidv4();
+  await pool.execute(
+    `INSERT INTO payments (id, user_id, order_id, method, amount, status, payment_data, expires_at)
+     VALUES (?, ?, ?, 'momo', ?, 'pending', ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))`,
+    [
+      paymentId,
+      actualUserId,
+      orderId, // Chứa userId nếu là nạp tiền, hoặc orderId nếu là mua hàng
+      amount,
+      JSON.stringify({
+        isTopup, // Đánh dấu là lệnh nạp tiền
+        requestId: momoResponse.requestId,
+        payUrl: momoResponse.payUrl,
+        deeplink: momoResponse.deeplink,
+        qrCodeUrl: momoResponse.qrCodeUrl,
+      })
+    ]
+  );
 
   return {
     paymentId,
@@ -153,66 +172,94 @@ const handleMoMoCallback = async (callbackData: MoMoCallbackData): Promise<void>
   const isValid = MoMoClient.verifySignature(callbackData, callbackData.signature);
   if (!isValid) throw new Error('Invalid signature');
 
-  // --- TÁCH LẤY UUID GỐC ---
-  // callbackData.orderId lúc này là: "UUID_TIMESTAMP" -> Tách mảng lấy phần đầu
-  const actualOrderId = callbackData.orderId.split('_')[0];
+  // Lấy UUID gốc trước khi MoMoClient nối timestamp
+  const actualOrderId = callbackData.orderId.split('_')[0]; 
 
-  // Dùng actualOrderId để truy vấn Database
-  const payment = await PaymentModel.findByOrderIdAndMethod(actualOrderId, 'momo');
-  if (!payment) throw new Error('Payment record not found');
+  // Truy vấn DB để lấy thông tin payment
+  const [payments]: any = await pool.execute(
+    'SELECT * FROM payments WHERE order_id = ? AND method = ? ORDER BY created_at DESC LIMIT 1',
+    [actualOrderId, 'momo']
+  );
+  if (payments.length === 0) throw new Error('Payment record not found');
+  
+  const payment = payments[0];
   if (payment.status !== 'pending') return;
 
   const isSuccess = callbackData.resultCode === 0;
   const newStatus = isSuccess ? 'success' : 'failed';
+  
+  // Đọc cờ isTopup từ DB
+  const paymentDataObj = typeof payment.payment_data === 'string' ? JSON.parse(payment.payment_data) : payment.payment_data;
+  const isTopup = paymentDataObj?.isTopup === true;
 
   const conn: any = await pool.getConnection();
   try {
     await conn.beginTransaction();
-
-    // Dùng actualOrderId thay vì callbackData.orderId
-    const [orders]: any = await conn.execute(
-      'SELECT id, buyer_id, total_amount FROM orders WHERE id = ? OR notes LIKE ?',
-      [actualOrderId, `%BATCH:${actualOrderId}%`]
-    );
 
     await conn.execute(
       `UPDATE payments SET status = ?, transaction_id = ? WHERE id = ?`,
       [newStatus, callbackData.transId || null, payment.id]
     );
 
-    if (isSuccess && orders.length > 0) {
-      for (const o of orders) {
-        await conn.execute(`UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, [o.id]);
-        await conn.execute(
-          `UPDATE escrow_transactions SET status = 'held', held_at = NOW() WHERE order_id = ? AND status = 'pending'`,
-          [o.id]
-        );
+    if (isTopup) {
+      // ──────────────────────────────────────────
+      // NHÁNH 1: XỬ LÝ NẠP VÍ
+      // ──────────────────────────────────────────
+      if (isSuccess) {
+        try {
+          await WalletService.depositFromPayment(
+            payment.user_id, // Lấy chuẩn xác userId từ bảng payments
+            callbackData.amount,
+            payment.id,
+            'momo',
+            `Nạp tiền vào ví từ MoMo`
+          );
+          logger.info(`[MoMo] Nạp ví thành công cho user: ${payment.user_id}`);
+        } catch (walletErr) {
+          logger.error('Lỗi nạp tiền vào ví:', walletErr);
+        }
       }
-      logger.info(`[MoMo] Payment Success. Tách thanh toán thành công cho ${orders.length} đơn hàng thuộc Batch ${actualOrderId}`);
-
-      // Update wallet
-      try {
-        await WalletService.depositFromPayment(
-          orders[0].buyer_id,
-          callbackData.amount,
-          payment.id,
-          'momo',
-          `MoMo payment for batch ${actualOrderId}`
-        );
-      } catch (walletErr) {
-        logger.error('Wallet deposit failed:', walletErr);
-      }
-    } else if (isSuccess) {
-      // No matching orders found — log as warning
-      logger.warn(`[MoMo] Payment Success but no orders found for ${actualOrderId}`);
     } else {
-      logger.warn(`[MoMo] Payment Failed for ${actualOrderId}: ${callbackData.message}`);
+      // ──────────────────────────────────────────
+      // NHÁNH 2: XỬ LÝ THANH TOÁN ĐƠN HÀNG
+      // ──────────────────────────────────────────
+      const [orders]: any = await conn.execute(
+        'SELECT id, buyer_id, total_amount FROM orders WHERE id = ? OR notes LIKE ?',
+        [actualOrderId, `%BATCH:${actualOrderId}%`]
+      );
+
+      if (isSuccess && orders.length > 0) {
+        for (const o of orders) {
+          await conn.execute(`UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, [o.id]);
+          await conn.execute(
+            `UPDATE escrow_transactions SET status = 'held', held_at = NOW() WHERE order_id = ? AND status = 'pending'`,
+            [o.id]
+          );
+        }
+
+        try {
+          await WalletService.depositFromPayment(
+            orders[0].buyer_id,
+            callbackData.amount,
+            payment.id,
+            'momo',
+            `Nạp tiền từ MoMo cho đơn hàng ${actualOrderId}`
+          );
+          await WalletService.deductFromWallet(
+            orders[0].buyer_id,
+            callbackData.amount,
+            actualOrderId,
+            `Thanh toán ký quỹ cho đơn hàng ${actualOrderId}`
+          );
+        } catch (walletErr) {
+          logger.error('Wallet sync failed:', walletErr);
+        }
+      }
     }
 
     await conn.commit();
   } catch (err) {
     await conn.rollback();
-    logger.error('handleMoMoCallback transaction error:', err);
     throw err;
   } finally {
     conn.release();
@@ -263,7 +310,7 @@ const updateQRPaymentStatus = async (paymentId: string, success: boolean): Promi
 
     if (success) {
       const [orders]: any = await conn.execute(
-        'SELECT id FROM orders WHERE id = ? OR notes LIKE ?',
+        'SELECT id, buyer_id FROM orders WHERE id = ? OR notes LIKE ?',
         [payment.order_id, `%BATCH:${payment.order_id}%`]
       );
 
@@ -271,6 +318,25 @@ const updateQRPaymentStatus = async (paymentId: string, success: boolean): Promi
         for (const o of orders) {
           await conn.execute(`UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending'`, [o.id]);
           await conn.execute(`UPDATE escrow_transactions SET status = 'held', held_at = NOW() WHERE order_id = ? AND status = 'pending'`, [o.id]);
+        }
+
+        // Bổ sung đồng bộ Ví cho QR
+        try {
+          await WalletService.depositFromPayment(
+            orders[0].buyer_id,
+            payment.amount,
+            paymentId,
+            'qr',
+            `Nạp tiền từ VietQR cho đơn hàng ${payment.order_id}`
+          );
+          await WalletService.deductFromWallet(
+            orders[0].buyer_id,
+            payment.amount,
+            payment.order_id,
+            `Thanh toán ký quỹ cho đơn hàng ${payment.order_id}`
+          );
+        } catch (walletErr) {
+          logger.error('Wallet sync failed in QR Update:', walletErr);
         }
       } else {
         // No orders found for this payment.order_id

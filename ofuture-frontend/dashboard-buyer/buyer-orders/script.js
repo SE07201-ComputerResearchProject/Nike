@@ -4,7 +4,6 @@
 // ============================================================
 
 const API_BASE_URL = window.CONFIG?.API_BASE_URL || 'http://localhost:5000/api';
-// Extract base URL for image uploads (remove /api suffix)
 const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '') || 'http://localhost:5000';
 let currentUser = null;
 let allOrders = [];
@@ -94,7 +93,7 @@ function renderOrders() {
         const amount = order.totalAmount || order.total_amount || order.total_price || order.depositAmount || order.deposit_amount || 0;
         const dateStr = new Date(order.createdAt || order.created_at || order.requested_at).toLocaleString('vi-VN');
         const badgeInfo = getStatusBadge(order.status);
-        
+
         // Lấy hình ảnh sản phẩm từ backend
         // Backend returns image_urls as JSON array: ["/uploads/filename.png"] or JSON string
         let productImage = getImageUrl(null); // Default placeholder
@@ -125,13 +124,13 @@ function renderOrders() {
         
         return `
             <div class="card order-card">
+                <div class="card order-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px dashed #cbd5e1;">
                     <div style="font-size: 13px; color: #64748b; font-weight: 500;">
                         Cửa hàng: <strong style="color: #0f172a;">${sellerName}</strong>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <div class="order-date">${dateStr}</div>
-                        <div class="badge ${badgeInfo.class}">${badgeInfo.text}</div>
                     </div>
                 </div>
                 <div class="order-body">

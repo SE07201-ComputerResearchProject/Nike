@@ -140,11 +140,13 @@ window.handlePlaceOrder = async function() {
         if (response.ok && data.success) {
             const representativeOrderId = data.data.orderId; // Lấy ID của đơn hàng vừa tạo
 
-            // 4. Gọi tiếp API thanh toán MoMo / VietQR
+            // 4. Gọi tiếp API thanh toán MoMo / VietQR / Ví
             if (paymentMethod === 'momo') {
                 await processMoMo(representativeOrderId, finalTotalAmount);
             } else if (paymentMethod === 'qr') {
                 await processVietQR(representativeOrderId, finalTotalAmount);
+            } else if (paymentMethod === 'wallet') {
+                await processWalletPayment(representativeOrderId, finalTotalAmount);
             }
         } else {
             throw new Error(data.message || "Lỗi khi tạo đơn hàng");
@@ -186,11 +188,13 @@ async function processMoMo(orderId, amount) {
         const checkInterval = setInterval(async () => {
             if (momoWindow.closed) {
                 clearInterval(checkInterval);
-                alert("Cửa sổ thanh toán đã đóng. Đang chuyển về danh sách đơn hàng.");
-                window.location.href = '../buyer-orders/index.html';
+                // BỎ alert(), thay bằng showToast
+                showToast("Đã đóng cửa sổ thanh toán. Đang kiểm tra lại...", true);
+                setTimeout(() => {
+                    window.location.href = '../buyer-orders/index.html';
+                }, 2000);
             }
             
-            // Tách ID đầu tiên ra để check (vì nếu đơn combo thì chỉ cần 1 đơn đổi sang paid là hiểu tất cả đã paid)
             const firstId = orderId.split('_')[0];
             const checkRes = await fetch(`${API_BASE_URL}/orders/${firstId}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
@@ -199,14 +203,57 @@ async function processMoMo(orderId, amount) {
             
             if (checkData.success && checkData.data.status === 'paid') {
                 clearInterval(checkInterval);
-                momoWindow.close();
-                alert("Thanh toán thành công!");
-                window.location.href = '../buyer-orders/index.html'; // Chuyển về trang đơn hàng
+                
+                // Đóng popup trước
+                if (!momoWindow.closed) {
+                    momoWindow.close();
+                }
+                
+                // BỎ alert(), dùng showToast để không bị chặn luồng
+                showToast("🎉 Thanh toán thành công! Đang chuyển hướng...");
+                setTimeout(() => {
+                    window.location.href = '../buyer-orders/index.html'; 
+                }, 1500); // Đợi 1.5s cho mượt rồi mới chuyển trang
             }
         }, 3000);
 
     } else {
         throw new Error(data.message || "Không thể tạo giao dịch MoMo");
+    }
+}
+
+// ── 7. Xử lý Thanh toán bằng Ví Nội bộ ──────────────────
+async function processWalletPayment(orderId, amount) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/payments/wallet/pay`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            },
+            body: JSON.stringify({ orderId, amount })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            // Xóa giỏ hàng
+            const remainingCart = JSON.parse(localStorage.getItem(CART_KEY)).filter(i => !i.selected);
+            localStorage.setItem(CART_KEY, JSON.stringify(remainingCart));
+            
+            showToast("🎉 Thanh toán bằng ví thành công!");
+            setTimeout(() => {
+                window.location.href = '../buyer-orders/index.html';
+            }, 1500);
+        } else {
+            throw new Error(data.message || "Số dư ví không đủ hoặc có lỗi xảy ra.");
+        }
+    } catch (error) {
+        showToast(error.message, true);
+        // Mở lại nút đặt hàng nếu lỗi (VD: thiếu tiền)
+        const btn = document.getElementById('placeOrderBtn');
+        btn.disabled = false;
+        btn.textContent = "Xác nhận Đặt hàng";
     }
 }
 
